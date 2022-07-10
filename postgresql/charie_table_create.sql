@@ -1,6 +1,6 @@
 --
 -- create all table
---autor:67200072_usami 
+--autor:67200072_usami
 
 -- スキーマ作成
 CREATE SCHEMA cmss;
