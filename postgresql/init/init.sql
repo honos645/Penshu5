@@ -20,7 +20,8 @@ SET search_path to cmss;
 \i /table/subject_detail.sql
 \i /table/users.sql
 \i /table/work.sql
-
+\i /table/subject_classification_advance.sql
+\i /table/subject_classification_graduate.sql
 \i /table/classification_name.sql
 
 --サンプルデータ登録
@@ -34,6 +35,7 @@ SET search_path to cmss;
 \COPY subject_grade FROM /data/subject_grade.csv DELIMITER AS ','
 \COPY subject_detail FROM /data/subject_detail.csv DELIMITER AS ','
 \COPY users FROM /data/users.csv DELIMITER AS ','
-
+\COPY subject_classification_graduate FROM /data/subject_classification_graduate.csv DELIMITER AS ','
+\COPY subject_classification_advance FROM /data/subject_classification_advance.csv DELIMITER AS ','
 
 -- \COPY work FROM /data/work.csv DELIMITER AS ','

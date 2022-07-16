@@ -235,7 +235,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 
   /* 合否取得SQL作成 */
   sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
-
+  // printf("%s\n", sql);
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
@@ -247,18 +247,31 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 
   resultRows = PQntuples(res);
   if(resultRows != 1) {
-//TODO: エラー
+//TODO: エラー2
     printf("%d error_2\n", resultRows);
     return -1;
   }
 
-  // 送信用文作成
-  sprintf(sendBuf, "%s\t%s\t%s\n", PQgetvalue(res, 0, 0), PQgetvalue(res, 0, 1), PQgetvalue(res, 0, 2));
-
 // NOTE: 分野別取得単位数を表示-未検証
-  if(strcmp(PQgetvalue(res, 0, 2), "可") {
-    char TMP = "B110";
+  if(strcasecmp(PQgetvalue(res, 0, 2), "可") == 0){
+    sprintf(sendBuf, "%s\t%s\t可\n", PQgetvalue(res, 0, 0), PQgetvalue(res, 0, 1));
+
+  }else if(strcasecmp(PQgetvalue(res, 0, 2), "不可") == 0) {
+  /* 不足分の単位数を取得 */
+    char *TMP = "B110"; //TODO: ここも求める
     sprintf(sql, "SELECT grade_list.classification_name AS name, grade_list.classification, sum(CASE WHEN grade_list.grade_point >= 60 AND grade_list.grade_point <= 100 THEN grade_list.credit ELSE 0 END) AS total FROM (SELECT subject_grade.id ,subject_detail.subject_code ,subject_detail.course_sharing_code ,subject_detail.subject_name ,subject_detail.credit ,subject_detail.classification ,classification_name.classification_name ,subject_detail.courses_available ,subject_grade.grade_point FROM (subject_detail INNER JOIN classification_name ON subject_detail.classification = classification_name.classification_code) LEFT OUTER JOIN subject_grade ON subject_detail.subject_code = subject_grade.subject_code AND subject_detail.opening_year = subject_grade.opening_year WHERE subject_detail.courses_available = '%s' AND (subject_grade.id = '%s' OR subject_grade.id IS NULL)) AS grade_list GROUP BY grade_list.classification, grade_list.classification_name;", TMP, __studentNum);
+    res = PQexec(__con, sql);
+    if(PQresultStatus(res) != PGRES_TUPLES_OK) {
+      printf("%s\n", PQresultErrorMessage(res));
+    //TODO: エラー1
+      printf("error_1\n");
+      return -1;
+    }
+    for (int i = 0; i < PQntuples(res); i++) {
+      sprintf(sendBuf, "%s%s |%s| %s単位取得済み\n", sendBuf, PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
+    }
+  }else {
+    printf("保留\n");
   }
 
   printf("%s", sendBuf);

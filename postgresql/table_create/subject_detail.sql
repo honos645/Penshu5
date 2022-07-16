@@ -9,5 +9,6 @@ CREATE TABLE subject_detail(
     credit integer,  --単位数
     courses_available varchar(5), --履修可能学科
     classification integer,  -- 科目区分
-    PRIMARY KEY (subject_code,opening_year)
+    nescessary integer,
+    PRIMARY KEY (subject_code, opening_year)
 );
