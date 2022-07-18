@@ -2,7 +2,7 @@
  * @file judge.c
  * @author 67200072 宇佐見 (hm20007@student.miyaazki-u.ac.jp)
  * @brief 卒業判定，不足科目表示
- *        コマンド::進級判定:pjudge 卒研判定:rjudge 卒業判定:gjudge 修了判定:cjudge
+ *        コマンド::卒研判定:rjudge 卒業判定:gjudge 修了判定:cjudge
  *        gcc judge_libpq.c -o judge -g -lpq
  * @version 1.0
  * @date 2022-07-05
@@ -96,41 +96,12 @@ int main(int argc, char **argv) {
   fgets(recvBuf, BUFSIZE, stdin);
   cmdArgc = sscanf(recvBuf, "%s %s", comm, commArg);
 
-  if(!strcmp("pjudge", comm) && cmdArgc == 2){
-    /* 進級判定 */
-    switch (userData.level) {
-      case STUDENT:
-        if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 0);
-        }else {
-          printf("学籍番号が違います\n");
-        }
-        break;
-      case CLASSTEACHER:
-      case SUBTEACHER:
-        if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 0);
-        }else {
-          judge_personal(con, commArg, 0);
-        }
-        break;
-      case KYOMU:
-      case STAFF:
-      case DEPCHAIR:
-        if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 0);
-        }else {
-          judge_personal(con, commArg, 0);
-        }
-        break;
-    }// ここまで進級判定
-
-  }else if(!strcmp("rjudge", comm) && cmdArgc == 2) {
+  if(!strcmp("rjudge", comm) && cmdArgc == 2) {
     /* 卒業研究着手判定 */
     switch (userData.level) {
       case STUDENT:
         if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 1);
+          judge_personal(con, commArg, 0);
         }else {
           printf("学籍番号が違います\n");
         }
@@ -138,18 +109,18 @@ int main(int argc, char **argv) {
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 1);
+          judge_list(con, userData, 0);
         }else {
-          judge_personal(con, commArg, 1);
+          judge_personal(con, commArg, 0);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 1);
+          judge_list(con, userData, 0);
         }else {
-          judge_personal(con, commArg, 1);
+          judge_personal(con, commArg, 0);
         }
         break;
     }// ここまで卒業研究着手判定
@@ -159,7 +130,7 @@ int main(int argc, char **argv) {
     switch (userData.level) {
       case STUDENT:
         if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 2);
+          judge_personal(con, commArg, 1);
         }else {
           printf("学籍番号が違います\n");
         }
@@ -167,18 +138,18 @@ int main(int argc, char **argv) {
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 2);
+          judge_list(con, userData, 1);
         }else {
-          judge_personal(con, commArg, 2);
+          judge_personal(con, commArg, 1);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 2);
+          judge_list(con, userData, 1);
         }else {
-          judge_personal(con, commArg, 2);
+          judge_personal(con, commArg, 1);
         }
         break;
     }// ここまで卒業判定
@@ -188,7 +159,7 @@ int main(int argc, char **argv) {
     switch (userData.level) {
       case STUDENT:
         if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 3);
+          judge_personal(con, commArg, 2);
         }else {
           printf("学籍番号が違います\n");
         }
@@ -196,18 +167,18 @@ int main(int argc, char **argv) {
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 3);
+          judge_list(con, userData, 2);
         }else {
-          judge_personal(con, commArg, 3);
+          judge_personal(con, commArg, 2);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 3);
+          judge_list(con, userData, 2);
         }else {
-          judge_personal(con, commArg, 3);
+          judge_personal(con, commArg, 2);
         }
         break;
     }// ここまで修了判定
@@ -223,19 +194,20 @@ int main(int argc, char **argv) {
  *
  * @param __con 構造体PGconn
  * @param __studentNum 判定する学籍番号
- * @param __judgeFlag 進級：０　卒業研究：１　卒業：２　修了：３
+ * @param __judgeFlag 卒業研究：0　卒業：1　修了：2
  * @return int 成功: 0, エラー: -1
  */
 int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   PGresult *res;
+  int result, resultRows;
   char sql[BUFSIZE];
-  int resultJudge, resultRows;
-  char judgeList[4][BUFSIZE] = {"promotion_judge", "research_judge", "graduation_judge", "completion_judge"};
+  char judgeList[3][BUFSIZE] = {"research_judge", "graduation_judge", "completion_judge"};
+  char resultList[3][BUFSIZE] = {"着手", "卒業", "修了"};
   char sendBuf[BUFSIZE];
 
-  /* 合否取得SQL作成 */
-  sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
-  // printf("%s\n", sql);
+  /* 合否取得SQL作成 例:personal_judge.sql*/
+  sprintf(sql, "SELECT grade_judge.id, users.person_name, grade_judge.%s FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
+  printf("%s\n", sql);
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
@@ -252,29 +224,56 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
     return -1;
   }
 
-// NOTE: 分野別取得単位数を表示-未検証
-  if(strcasecmp(PQgetvalue(res, 0, 2), "可") == 0){
-    sprintf(sendBuf, "%s\t%s\t可\n", PQgetvalue(res, 0, 0), PQgetvalue(res, 0, 1));
-
-  }else if(strcasecmp(PQgetvalue(res, 0, 2), "不可") == 0) {
-  /* 不足分の単位数を取得 */
-    char *TMP = "B110"; //TODO: ここも求める
-    sprintf(sql, "SELECT grade_list.classification_name AS name, grade_list.classification, sum(CASE WHEN grade_list.grade_point >= 60 AND grade_list.grade_point <= 100 THEN grade_list.credit ELSE 0 END) AS total FROM (SELECT subject_grade.id ,subject_detail.subject_code ,subject_detail.course_sharing_code ,subject_detail.subject_name ,subject_detail.credit ,subject_detail.classification ,classification_name.classification_name ,subject_detail.courses_available ,subject_grade.grade_point FROM (subject_detail INNER JOIN classification_name ON subject_detail.classification = classification_name.classification_code) LEFT OUTER JOIN subject_grade ON subject_detail.subject_code = subject_grade.subject_code AND subject_detail.opening_year = subject_grade.opening_year WHERE subject_detail.courses_available = '%s' AND (subject_grade.id = '%s' OR subject_grade.id IS NULL)) AS grade_list GROUP BY grade_list.classification, grade_list.classification_name;", TMP, __studentNum);
+  result = atoi(PQgetvalue(res, 0, 2));
+  if(result == 0) {
+    printf("%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+  }else if(result == 1) {
+    /* 単位数比較表SQL 例:personal_judge2.sql */
+    if(__studentNum[3] < '2' || (__studentNum[3] == '2' && __studentNum[4] == '0')) {
+      sprintf(sql, "SELECT subject_classification_advance.classification, subject_classification_advance.required_credit ,CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END ,subject_classification_advance.absolute_option FROM subject_classification_advance LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%c%c%c%c' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_advance.classification = credit.classification;", __studentNum, __studentNum[0], __studentNum[1], __studentNum[2], '0');
+    }else {
+      sprintf(sql, "SELECT subject_classification_advance.classification, subject_classification_advance.required_credit ,CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END ,subject_classification_advance.absolute_option FROM subject_classification_advance LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%c%c%c%c' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_advance.classification = credit.classification;", __studentNum, __studentNum[0], __studentNum[1], __studentNum[2], '1');
+    }
     res = PQexec(__con, sql);
-    if(PQresultStatus(res) != PGRES_TUPLES_OK) {
-      printf("%s\n", PQresultErrorMessage(res));
-    //TODO: エラー1
-      printf("error_1\n");
-      return -1;
+    resultRows = PQntuples(res);
+    int creditList[resultRows][3];
+    for (int i = 0; i < resultRows; i++) {
+      for (int j = 0; j < 3; j++) {
+        creditList[i][j] = atoi(PQgetvalue(res, i, j));
+      }
     }
-    for (int i = 0; i < PQntuples(res); i++) {
-      sprintf(sendBuf, "%s%s |%s| %s単位取得済み\n", sendBuf, PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
-    }
-  }else {
-    printf("保留\n");
-  }
+    printf("%s %s %s不可%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+    printf("必要単位%s", ENTER);
 
-  printf("%s", sendBuf);
+//FIXME: ここなんかおかしい
+    for (int i = 0; i < sizeof(creditList) / sizeof(*creditList); i++) {
+      if(creditList[i][1] - creditList[i][2] > 0) {
+        sprintf(sql, "SELECT subject_detail.subject_name FROM subject_detail LEFT OUTER JOIN (SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s' ) AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND subject_detail.classification = %d AND grade.grade_point IS NULL;", __studentNum, "B110", creditList[i][0]);
+        res = PQexec(__con, sql);
+        resultRows = PQntuples(res);
+        for (int i = 0; i < resultRows; i++) {
+          printf("%s\n", PQgetvalue(res, i, 0));
+        }
+      }
+      else
+      {
+        continue;
+      }
+    }
+  }
+  else if (result == 2)
+  {
+    printf("%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+  }
+  else if (result = -1)
+  {
+    printf("データ未設定\n");
+  }
+  else
+  {
+    // TODO: エラー3
+    printf("%s error_3%s", ER_STAT, ENTER);
+  }
 
   return 0;
 }// judge_personal End
