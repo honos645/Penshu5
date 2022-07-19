@@ -182,6 +182,8 @@ int main(int argc, char **argv) {
         }
         break;
     }// ここまで修了判定
+  }else {
+    printf("コマンドが違います\n");
   }
 
   PQfinish(con);
@@ -200,19 +202,21 @@ int main(int argc, char **argv) {
 int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   PGresult *res;
   int result, resultRows;
-  char sql[BUFSIZE];
+  char sql[BUFSIZE], temp[BUFSIZE];
   char judgeList[3][BUFSIZE] = {"research_judge", "graduation_judge", "completion_judge"};
+  char creditTable[3][BUFSIZE] = {"advance", "graduate", ""};
   char resultList[3][BUFSIZE] = {"着手", "卒業", "修了"};
   char sendBuf[BUFSIZE];
 
-  /* 合否取得SQL作成 例:personal_judge.sql*/
+  /* 合否取得SQL作成 例:personalJudge.sql*/
   sprintf(sql, "SELECT grade_judge.id, users.person_name, grade_judge.%s FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
-  printf("%s\n", sql);
+  // printf("%s\n", sql);
+
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
     printf("%s\n", PQresultErrorMessage(res));
-//TODO: エラー
+//TODO: エラー1
     printf("error_1\n");
     return -1;
   }
@@ -220,57 +224,78 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   resultRows = PQntuples(res);
   if(resultRows != 1) {
 //TODO: エラー2
-    printf("%d error_2\n", resultRows);
+    printf("error_2\n");
     return -1;
   }
 
   result = atoi(PQgetvalue(res, 0, 2));
   if(result == 0) {
     printf("%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+
   }else if(result == 1) {
-    /* 単位数比較表SQL 例:personal_judge2.sql */
+    int flag = 0;
+    /* 単位数比較表SQL 例:personalJudge2.sql */
     if(__studentNum[3] < '2' || (__studentNum[3] == '2' && __studentNum[4] == '0')) {
-      sprintf(sql, "SELECT subject_classification_advance.classification, subject_classification_advance.required_credit ,CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END ,subject_classification_advance.absolute_option FROM subject_classification_advance LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%c%c%c%c' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_advance.classification = credit.classification;", __studentNum, __studentNum[0], __studentNum[1], __studentNum[2], '0');
+      sprintf(temp, "%c%c%c0", __studentNum[0], __studentNum[1], __studentNum[2]);
     }else {
-      sprintf(sql, "SELECT subject_classification_advance.classification, subject_classification_advance.required_credit ,CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END ,subject_classification_advance.absolute_option FROM subject_classification_advance LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%c%c%c%c' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_advance.classification = credit.classification;", __studentNum, __studentNum[0], __studentNum[1], __studentNum[2], '1');
+      sprintf(temp, "%c%c%c1", __studentNum[0], __studentNum[1], __studentNum[2]);
     }
+    sprintf(sql, "SELECT subject_classification_%s.classification, subject_classification_%s.required_credit, CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END, subject_classification_%s.absolute_option FROM subject_classification_%s LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_%s.classification = credit.classification;", creditTable[__judgeFlag], creditTable[__judgeFlag], creditTable[__judgeFlag], creditTable[__judgeFlag], __studentNum, temp, creditTable[__judgeFlag]);
+    // printf("%s\n\n", sql);
+
+
     res = PQexec(__con, sql);
     resultRows = PQntuples(res);
-    int creditList[resultRows][3];
+    int creditList[resultRows][4];
     for (int i = 0; i < resultRows; i++) {
-      for (int j = 0; j < 3; j++) {
+      for (int j = 0; j < 4; j++) {
         creditList[i][j] = atoi(PQgetvalue(res, i, j));
       }
     }
     printf("%s %s %s不可%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     printf("必要単位%s", ENTER);
+    printf("**************************************************************\n");
 
-//FIXME: ここなんかおかしい
+
+//CHECK: 科目区分コードの確認. subject_clasification_*とsubject_detailで意味が違う
     for (int i = 0; i < sizeof(creditList) / sizeof(*creditList); i++) {
+
       if(creditList[i][1] - creditList[i][2] > 0) {
-        sprintf(sql, "SELECT subject_detail.subject_name FROM subject_detail LEFT OUTER JOIN (SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s' ) AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND subject_detail.classification = %d AND grade.grade_point IS NULL;", __studentNum, "B110", creditList[i][0]);
-        res = PQexec(__con, sql);
-        resultRows = PQntuples(res);
-        for (int i = 0; i < resultRows; i++) {
-          printf("%s\n", PQgetvalue(res, i, 0));
+        if(creditList[i][0] % 10 == 0) {
+          /* SQL例 needCreditSum.sql */
+          sprintf(sql, "SELECT subject_detail.subject_name, subject_detail.necessary FROM subject_detail LEFT OUTER JOIN (SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s' ) AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND subject_detail.classification > %d AND subject_detail.classification < %d AND grade.grade_point IS NULL GROUP BY subject_detail.subject_name, subject_detail.necessary ORDER BY subject_detail.necessary ASC;", __studentNum, "B110", creditList[i][0], creditList[i][0] + 10);
+          // printf("%s\n", sql);
+        }else {
+          /* SQL例 needCreditSum.sql */
+          sprintf(sql, "SELECT subject_detail.subject_name, subject_detail.necessary FROM subject_detail LEFT OUTER JOIN (SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s' ) AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND subject_detail.classification = %d AND grade.grade_point IS NULL GROUP BY subject_detail.subject_name, subject_detail.necessary ORDER BY subject_detail.necessary ASC;", __studentNum, "B110", creditList[i][0]);
+          // printf("%s\n", sql);
         }
-      }
-      else
-      {
+        // printf("%s\n", sql);
+          res = PQexec(__con, sql);
+          resultRows = PQntuples(res);
+
+          for (int j = 0; j < resultRows; j++) {
+            if(atoi(PQgetvalue(res, j, 1)) == 0) {
+              printf("+ %s\n", PQgetvalue(res, j, 0));
+            }else {
+              flag = 1;
+              printf("%s\n", PQgetvalue(res, j, 0));
+            }
+          }
+          if(flag == 1) {
+            printf("上記から%d単位\n", creditList[i][1] - creditList[i][2]);
+            flag = 0;
+          }
+          if(PQntuples(res) != 0) printf("**************************************************************\n");
+      }else {
         continue;
       }
     }
-  }
-  else if (result == 2)
-  {
+  }else if (result == 2) {
     printf("%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
-  }
-  else if (result = -1)
-  {
+  }else if (result = -1) {
     printf("データ未設定\n");
-  }
-  else
-  {
+  }else {
     // TODO: エラー3
     printf("%s error_3%s", ER_STAT, ENTER);
   }
@@ -286,6 +311,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
  * @param __judgeFlag 進級：０　卒業研究：１　卒業：２　修了：３
  * @return int 成功: 0, エラー: -1
  */
+// TODO: SQLの改善
 int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
   PGresult *res;
   char sql[BUFSIZE];
@@ -301,23 +327,23 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
     sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (grade_judge.id LIKE 'B%%' OR grade_judge.id LIKE 'M%%' OR grade_judge.id LIKE 'D%%');", List[__judgeFlag]);
 
   }else {
-// TODO: エラー
-    printf("error_3\n");
+// TODO: エラー4
+    printf("error_4\n");
   }
 
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
     printf("%s\n", PQresultErrorMessage(res));
-//TODO: エラー
-    printf("error_4\n");
+//TODO: エラー5
+    printf("error_5\n");
     return -1;
   }
 
   resultRows = PQntuples(res);
   if(resultRows < 0) {
-//TODO: エラー
-    printf("%d error_5\n", resultRows);
+//TODO: エラー6
+    printf("%d error_6\n", resultRows);
     return -1;
   }
 

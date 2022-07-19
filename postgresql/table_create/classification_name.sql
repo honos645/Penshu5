@@ -1,6 +1,6 @@
 CREATE TABLE classification_name(
-  classification_code INTEGER,
-  classification_name VARCHAR(256)
+  code INTEGER,
+  name VARCHAR(256)
 );
 
 INSERT INTO classification_name VALUES(11, '大学教育入門セミナー');
