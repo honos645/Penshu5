@@ -1,5 +1,6 @@
 SELECT
-  subject_classification_advance.classification
+  classification_name.name
+  ,subject_classification_advance.classification
   ,subject_classification_advance.required_credit
   ,CASE
     WHEN credit.sum IS NULL THEN 0
@@ -27,7 +28,7 @@ FROM
         FROM
           subject_grade
         WHERE
-          subject_grade.id = 'B1120009'
+          subject_grade.id = 'B1120002'
       ) AS grade
       ON subject_detail.subject_code = grade.subject_code
       AND subject_detail.opening_year = grade.opening_year
@@ -44,4 +45,6 @@ FROM
       subject_detail.classification ASC
   ) AS credit
   ON subject_classification_advance.classification = credit.classification
+  INNER JOIN classification_name
+  on subject_classification_advance.classification = classification_name.code
 ;
