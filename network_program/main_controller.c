@@ -16,7 +16,7 @@ void *main_controller(void *__arg){
   pthread_t selfId;                      //自分自身のスレッドID
   char comm[BUFSIZE];    //プロトコル・コマンド
   int flag, cnt;
-  UserInfo *User_Info;
+  UserInfo *User_Info = malloc(sizeof(User_Info));
 
   selfId = pthread_self(); //自分自身のスレッドIDを取得
   printf("[C_THREAD %ld] PMSS CONTROLLER START (%d)\n", selfId, threadParam->soc);
@@ -105,6 +105,8 @@ void *main_controller(void *__arg){
   PQfinish(threadParam->con);
   /* ソケットを切断 */
   close(threadParam->soc);
+  /* ユーザ情報構造体の領域解放 */
+  free(User_Info);
   /* スレッド引数構造の領域解放 */
   free(threadParam);
 }//END

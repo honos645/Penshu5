@@ -80,17 +80,11 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
   }
 
     strcpy( __User_Info->id, PQgetvalue(res, 0, 2));
-    printf("1\n");
     strcpy( __User_Info->person_name, PQgetvalue(res, 0, 3));
-    printf("2\n");
-    __User_Info->user_level = atoi(PQgetvalue(res, 0, 7));
-    printf("3\n");
     strcpy( __User_Info->major, PQgetvalue(res, 0, 10));
-    printf("4\n");
     strcpy( __User_Info->department, PQgetvalue(res, 0, 9));
-    printf("5\n");
+    __User_Info->user_level = atoi(PQgetvalue(res, 0, 7));
     __User_Info->school_year = atoi(PQgetvalue(res, 0, 11));
-    printf("6\n");
     //結果（テスト）
     // printf("%s\n",_user_info.id);
     // printf("%s\n",_user_info.person_name);
