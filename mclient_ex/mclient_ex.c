@@ -29,15 +29,20 @@ int main(int argc, char *argv[]){
   u_short port;
   char *records[RECORD_MAX];  //データレコードのポインタ配列
   int recordCount;  //データレコードの件数
-  
+
   if(argc != 3){
     printf("Usage: %s ipaddr port\n", argv[0]);
     exit(1);
   }
 
-  port = atoi(argv[2]); 
+  port = atoi(argv[2]);
 
   if(( s = setup_connect(argv[1], port)) < 0) exit(1);
+
+  // sendLen = sprintf(sendBuf, "\n");
+  // send(s, sendBuf, sendLen, 0);
+  recvLen = recv_data(s, recvBuf, BUFSIZE_MAX); //データ終了デリミタまでサーバからデータ受信
+  recordCount = record_division(recvBuf, records);
 
   while(1){
     fgets(sendBuf, BUFSIZE, stdin);           //標準入力から読み込み
@@ -47,7 +52,7 @@ int main(int argc, char *argv[]){
     send(s, sendBuf, sendLen, 0);             //サーバへ送信
     recvLen = recv_data(s, recvBuf, BUFSIZE_MAX); //データ終了デリミタまでサーバからデータ受信
     recordCount = record_division(recvBuf, records);
-    
+
     for(i=0; i<recordCount; i++){
       printf("[%2d]%s\n", i, records[i]);
     }
@@ -65,17 +70,17 @@ int main(int argc, char *argv[]){
 //     int    bufSize   : 受信データを格納するバッファサイズ
 //   [RETURN]
 //     success : 受信データのトータルサイズ
-//     error   : -1 
+//     error   : -1
 //=========================================================
 int recv_data(int s, char *recvBuf, int bufSize){
   char tmpBuf[BUFSIZE];
   int recvLen, recvTotal=0;
-  
+
   memset(recvBuf, 0, bufSize);  //受信データ格納用バッファを初期化
   do{
     memset(tmpBuf, 0, BUFSIZE);                   //受信用のバッファを初期化
     recvLen = recv(s, tmpBuf, BUFSIZE-1, 0);      //サーバからデータ受信
-    if(recvTotal == 0) 
+    if(recvTotal == 0)
       sprintf(recvBuf, "%s", tmpBuf);
     else if(recvTotal + recvLen < bufSize)
       sprintf(recvBuf, "%s%s", recvBuf, tmpBuf);  //受信データを結合
@@ -84,7 +89,7 @@ int recv_data(int s, char *recvBuf, int bufSize){
     recvTotal += recvLen;                        //トータルの受信サイズを更新
   }while(strcmp(&recvBuf[recvTotal-2], DATA_END) != 0); //データ終了デリミタがあるまで繰り返す
   return recvTotal; //トータル受信データ数を返す
-} 
+}
 
 //=========================================================
 // record_division
@@ -99,7 +104,7 @@ int record_division(char *block, char *records[]){
   int n=0;
 
   records[n++] = block;
- 
+
   while(n < RECORD_MAX){
     while(*block && *block != '\n') block++; //改行('\n')になるまでポインタを進める
     *block = '\0';                           //改行を文字列終端文字('\0')に変更

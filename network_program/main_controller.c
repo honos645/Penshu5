@@ -1,5 +1,5 @@
 
-#include "csmm.h"
+#include "cmss.h"
 
 /**
  * controller
@@ -19,11 +19,14 @@ void *main_controller(void *__arg){
   UserInfo *User_Info;
 
   selfId = pthread_self(); //自分自身のスレッドIDを取得
-  printf("[C_THREAD %ld] NETBANK CONTROLLER START (%d)\n", selfId, threadParam->soc);
+  printf("[C_THREAD %ld] PMSS CONTROLLER START (%d)\n", selfId, threadParam->soc);
 
   /* ログイン */
   flag = account_create(selfId, threadParam->con, threadParam->soc, User_Info);
-
+//
+  // strcpy(User_Info->id, "B112002");
+  // User_Info->user_level = 1;
+  flag = 1;
   while(flag){
     /* プロトコル・コマンド受信 */
     recvLen = receive_message(threadParam->soc, recvBuf, BUFSIZE);
@@ -31,6 +34,10 @@ void *main_controller(void *__arg){
       break;
     recvBuf[recvLen-1] = '\0'; // <LF>を消去
     printf("[C_THREAD %ld] RECV=> %s\n", selfId, recvBuf);
+
+    sprintf(sendBuf, "aaaaaaaaa%s", ENTER);
+    sendLen = strlen(sendBuf);
+    send(threadParam->soc, sendBuf, sendLen, 0);
 
     /* プロトコル・コマンド解析 */
     cnt=sscanf(recvBuf, "%s", comm);
@@ -49,7 +56,7 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, SUBJECT_REGIST) == 0){
       /* 科目登録 */
-      subject_regist(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
+      // subject_regist(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
 
     }else if(strcmp(comm, INPUT_COURSE) == 0){
       /* 進路入力 */
@@ -69,7 +76,7 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, GRADUATE_COUNT) == 0){
       /* 卒業者・留年者 */
-      graduate_count(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
+      // graduate_count(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
 
     }else{
       sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_3, ENTER);

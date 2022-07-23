@@ -6,9 +6,9 @@ CC	= gcc
 
 LIBS	= -lpq -lpthread
 
-SRCS	 = $(MAIN_SRC) $(USAMI) $(YANO) $(IKEIDO) $(KAMADA) #$(KITAZAWA)
+SRCS	 = $(MAIN_SRC) $(USAMI) $(YANO) $(IKEIDO) $(KAMADA) $(AMAKI) $(TAIKI) #$(KITAZAWA)
 
-MAIN_SRC	= setup_listen.c pmss_server_main.c main_controller.c
+MAIN_SRC	= setup_listen.c pmss_server_main.c main_controller.c common_func.c
 
 USAMI	= judge.c
 
@@ -20,11 +20,15 @@ KAMADA	= input_course.c
 
 # KITAZAWA = gpa_create.c personal_grade.c
 
+# AMAKI	=subject_regist.c
+
+TAIKI	= all_grade.c
+
 HDRS	= $(MAIN_HDR) $(HDR)
 
 MAIN_HDR	= cmss.h
 
-HDR	= common_func.c judge.h
+HDR	=  judge_head.h all_grage_head.h
 
 OBJS	= $(SRCS:.c=.o)
 

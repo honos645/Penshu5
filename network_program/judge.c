@@ -11,7 +11,7 @@
  *
  */
 
-#include"judge.h"
+#include"judge_head.h"
 
 int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, int __judgeFlag, char *__recvBuf) {
   char sql[BUFSIZE];

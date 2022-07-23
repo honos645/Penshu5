@@ -1,5 +1,5 @@
 /**
- *  gcc all_grade.c -o all_grade -lpq
+ *  gcc LIGPA_main.c -o LIGPA_main -lpq
  **/
 
 /**
@@ -17,10 +17,10 @@
  *    Error     : -1
  **/
 
-#include "cmss.h"
-#include "all_grage_head.h"
+#include "PMSS.h"
+#include "LIGPA.h"
 
-int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *User_Info){
+int LIGPA(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf){
   PGresult *res;
   char sql[BUFSIZE];
   char comm[BUFSIZE];
@@ -42,7 +42,7 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
   /*プロトコル、コマンド引数取得*/
   n = sscanf(__recvBuf, "%s %s %s %d %s", comm, department, major, &school_year, sort);
   if( n != 5 ){
-    sprintf(__recvBuf, "%s %d%s", ER_STAT, E_CODE_2, ENTER);
+    sprintf(__recvBuf, "%s %d%s", ER_STAT, E_CODE_200, ENTER);
     return -1;
   }
 
@@ -57,21 +57,21 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
 
   n = sscanf(__recvBuf, "%d %d %d %s", &department, &major, &school_year, sort);*/
 
-  /*__User_Info.level = '0';
+  __User_Info.level = '0';
   __User_Info.department = '0';
   __User_Info.major = '0';
-  __User_Info.school_year = '1';*/
-
-  if( User_Info->user_level == '1'){
+  __User_Info.school_year = '1';
+  
+  if( __User_Info.level == '1'){
     printf("error:閲覧権限がありません。\n");
-    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_400, ENTER);
     return -1;
   }
 
-  if( User_Info->user_level == '4' || User_Info->user_level == '5'){
-    if( User_Info->department != department || User_Info->major != major || User_Info->school_year == school_year ){
+  if( __User_Info.level == '4' || __User_Info.level == '5'){
+    if( __User_Info.department != atoi(department) || __User_Info.major != atoi(major) || __User_Info.school_year == school_year ){
       printf("error:閲覧権限がありません。\n");
-      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_400, ENTER);
       return -1;
     }
   }
@@ -87,14 +87,14 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
     res = PQexec(__con, sql);
     if(PQresultStatus(res) != PGRES_TUPLES_OK){
       printf("%s\n", PQresultErrorMessage(res));
-      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_100, ENTER);
       printf("%s", __sendBuf);
       return -1;
     }
 
     resultRows = PQntuples(res);
     if(resultRows < 0){
-      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_100, ENTER);
       printf("%s", __sendBuf);
       return -1;
     }
@@ -106,7 +106,7 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
     sendLen = sprintf(__sendBuf, "学籍番号 名前 GPA 席次%s", ENTER);
     send(__soc, __sendBuf, sendLen, 0);
     printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);
-
+  
     for(i=0; i<resultRows; i++){
       id = PQgetvalue(res, i, 0); //0 番目のフィールド値を取得
       name = PQgetvalue(res, i, 1); //1 番目のフィールド値を取得
@@ -130,14 +130,14 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
       res = PQexec(__con, sql);
       if(PQresultStatus(res) != PGRES_TUPLES_OK){
 	printf("%s\n", PQresultErrorMessage(res));
-	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_100, ENTER);
 	printf("%s", __sendBuf);
 	return -1;
       }
 
       resultRows = PQntuples(res);
       if(resultRows < 0){
-	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_100, ENTER);
 	printf("%s", __sendBuf);
 	return -1;
       }
@@ -152,17 +152,17 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
 	gpa = atoi(PQgetvalue(res, j, 2)); //2 番目のフィールド値を取得
 	ranking = atoi(PQgetvalue(res, j, 3)); //3 番目のフィールド値を取得
 	exam_classification = atoi(PQgetvalue(res, j, 4)); //4番目のフィールド値を取得
-
+	  
 	sendLen = sprintf(__sendBuf, "%s %s %d %d %s%s", id, name, gpa, ranking, classification[exam_classification], ENTER);
 	/*プロトコル、レスポンスを送信*/
 	send(__soc, __sendBuf, sendLen, 0);
       }
     }
   }else{
-    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_5, ENTER);
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_500, ENTER);
     printf("%s", __sendBuf);
     return -1;
   }
-
+  
   return 0;
 }

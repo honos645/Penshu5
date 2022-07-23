@@ -3,7 +3,7 @@
  * pmss_server_main.c
  **/
 
-#include "csmm.h"
+#include "cmss.h"
 
 int setup_listen(u_short __port);
 void service_start(int __lsoc);
@@ -67,15 +67,15 @@ void service_start(int __lsoc){
       printf("Connection to database '%s:%s %s' failed.\n", dbHost, dbPort, dbName);
       printf("%s", PQerrorMessage(threadParam->con));
       threadParam->con = NULL; //GPconnをNULL
-      sendLen = sprintf(sendBuf,"%s %d%s",ER_STAT, E_CODE_7, ENTER);
-      send(s_new, sendBuf, sendLen, 0);
+      // sendLen = sprintf(sendBuf,"%s %d%s",ER_STAT, E_CODE_7, ENTER);
+      // send(s_new, sendBuf, sendLen, 0);
     }else{
       printf("Connected to database %s:%s %s\n", dbHost, dbPort, dbName);
+    }
       /* スレッドの生成 */
       pthread_create(&worker, NULL, (void *)*main_controller, (void *)threadParam);
       printf("[MAIN THREAD] Created thread ID: %ld\n", worker);
       /* スレッドのデタッチ(終了を待たない) */
       pthread_detach(worker);
-    }
   }//END while()
 }//END service_start()

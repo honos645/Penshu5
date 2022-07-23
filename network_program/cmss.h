@@ -22,6 +22,7 @@
 #define BUFSIZE 2048
 #define PORT 10000     //ATMサーバのポート番号
 #define ENTER "\n" //<LF>
+#define DATA_END ".\n"
 
 //*** プロトコルコマンド ***//
 #define ACCOUNT_CREATE    "account_create"  //ログイン
@@ -58,11 +59,11 @@ typedef struct _ThreadParamter {
 }ThreadParameter;
 
 typedef struct _UserInfo {
-  char id[BUFSIZE];
-  char person_name[BUFSIZE];
+  char id[10];
+  char person_name[100];
   int user_level;
-  char department[BUFSIZE];
-  char major[BUFSIZE];
+  char department[100];
+  char major[100];
   int school_year;
 }UserInfo;
 

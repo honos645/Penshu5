@@ -30,5 +30,6 @@ services:
       - "10000:10000"
     volumes:
       - ../libpq_program:/libpq_program
+      - ../network_program:/network_program
     tty: true
     restart: always

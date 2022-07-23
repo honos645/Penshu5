@@ -1,7 +1,7 @@
 /**
- *    gcc -o login login.c -lpq
- **/
-#include"csmm.h"
+*    gcc -o login login.c -lpq
+**/
+#include"cmss.h"
 
 int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User_Info){
   PGresult *res, *resSrc, *resDest;
@@ -22,7 +22,7 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
   //入力が3回間違えたら終了する。
   while (count < 3){
 
-  sprintf(sendBuf,"ログインIDを入力してください。\n");
+  sprintf(sendBuf,"ログインIDを入力してください。%s", DATA_END);
   sendLen = strlen(sendBuf);
   send( __soc,sendBuf,sendLen,0);
   printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);

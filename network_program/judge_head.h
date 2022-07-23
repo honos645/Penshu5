@@ -1,7 +1,7 @@
 #ifndef __JUDGE_
 #define __JUDGE_
 
-#include"csmm.h"
+#include"cmss.h"
 
 //*** 判定 ***//
 #define PASSING 0
