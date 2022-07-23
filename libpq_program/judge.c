@@ -50,7 +50,7 @@ typedef struct _UserData {
 int judge_personal(PGconn *__con, char *__studentNum, int judgeFlag);
 int judge_list(PGconn *__con, UserData __user, int __judgeFlag);
 
-int main(int argc, char **argv) {
+int judge_main(int argc, char **argv) {
   PGconn   *con;  // PGConnオブジェクト
   PGresult *res;
   char *dbHost  = "kite.cs.miyazaki-u.ac.jp";   // DBServerのホスト名
@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
+          send(/*TODO: soc */, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
@@ -136,6 +137,7 @@ int main(int argc, char **argv) {
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
+          send(/*TODO: soc */, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
@@ -167,6 +169,7 @@ int main(int argc, char **argv) {
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
+          send(/*TODO: soc */, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
@@ -191,7 +194,8 @@ int main(int argc, char **argv) {
   }else {
     sendLen = sprintf(sendBuf, "コマンドが違います%s", ENTER);
     printf("%s", sendBuf);
-    printf("コマンドが違います\n");
+    // printf("コマンドが違います\n");
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
   }
 
   PQfinish(con);
@@ -228,6 +232,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 //TODO: エラー1
     sendLen = sprintf(sendBuf, "%s error_1%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("error_1\n");
     return -1;
   }
@@ -237,6 +242,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 //TODO: エラー2
     sendLen = sprintf(sendBuf, "%s error_2%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("error_2\n");
     return -1;
   }
@@ -245,6 +251,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   if(result == 0) {
     sendLen = sprintf(sendBuf, "%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
 
   }else if(result == 1) {
@@ -271,6 +278,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
     // printf("%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
     sendLen = sprintf(sendBuf, "%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
 
     for (int i = 0; i < sizeof(creditList) / sizeof(*creditList); i++) {
       if(creditList[i][0] % 10 != 0) continue;
@@ -291,6 +299,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
               if(atoi(PQgetvalue(res, k, 1)) == 0) {
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
                 printf("%s", sendBuf);
+                send(/*TODO: soc */, sendBuf, sendLen, 0);
                 // printf("%s\n", PQgetvalue(res, k , 0));
               }
             }
@@ -302,6 +311,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
                 selectFlag = 1;
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
                 printf("%s", sendBuf);
+                send(/*TODO: soc */, sendBuf, sendLen, 0);
                 // printf("%s\n", PQgetvalue(res, k, 0));
               }
             }
@@ -310,6 +320,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
               selectFlag = 1;
               sendLen = sprintf(sendBuf, "**%sから%d単位必要**\n", listName[j], needCredit);
               printf("%s", sendBuf);
+              send(/*TODO: soc */, sendBuf, sendLen, 0);
               // printf("**%sから%d単位必要**\n", listName[j], needCredit);
             }
             // if(selectFlag) printf("******\n");
@@ -321,15 +332,18 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   }else if (result == 2) {
     sendLen = sprintf(sendBuf, "%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
   }else if (result = -1) {
     sendLen = sprintf(sendBuf, "データ未設定%s", ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("データ未設定\n");
   }else {
     // TODO: エラー3
     sendLen = sprintf(sendBuf, "%s error_3%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("%s error_3%s", ER_STAT, ENTER);
     return -1;
   }
@@ -365,6 +379,7 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
 // TODO: エラー4
     sendLen = sprintf(sendBuf, "%s error_4%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("error_4\n");
     return -1;
   }
@@ -376,6 +391,7 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
 //TODO: エラー5
     sendLen = sprintf(sendBuf, "%s error_5%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("error_5\n");
     return -1;
   }
@@ -385,15 +401,16 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
 //TODO: エラー6
     sendLen = sprintf(sendBuf, "%s error_6%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
     // printf("error_6\n");
     return -1;
   }
 
   for (int i = 0; i < resultRows; i++) {
     sendLen = sprintf(sendBuf, "%s%s\t%s\t%s\n", sendBuf, PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
+    printf("%s", sendBuf);
+    send(/*TODO: soc */, sendBuf, sendLen, 0);
   }
-
-  printf("%s", sendBuf);
 
   return 0;
 }
