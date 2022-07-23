@@ -11,194 +11,119 @@
  *
  */
 
-// TODO: 不可の時の不足科目を表示する機能
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include"judge.h"
 
-#include <postgresql/libpq-fe.h>
-
-#define BUFSIZE 2048
-#define ENTER "\n" //<LF>
-
-//*** レスポンスステータス ***//
-#define OK_STAT    "+OK"     //成功
-#define ER_STAT    "-ERR"    //失敗
-
-//*** 判定 ***//
-#define PASSING 0
-#define FAILURE 1
-#define PENDING 2
-
-//*** ユーザステータス ***//
-#define ADMIN 0
-#define STUDENT 1
-#define STAFF 2
-#define KYOMU 3
-#define TEACHER 4
-#define CLASSTEACHER 5
-#define SUBTEACHER 6
-#define CLASSEMPLOY 7
-#define EMPLOY 8
-#define DEPCHAIR 9
-
-typedef struct _UserData {
-  char id[9];    // 学籍番号
-  int level; // ユーザレベル
-}UserData;
-
-int judge_personal(PGconn *__con, char *__studentNum, int judgeFlag);
-int judge_list(PGconn *__con, UserData __user, int __judgeFlag);
-
-int judge_main(int argc, char **argv) {
-  PGconn   *con;  // PGConnオブジェクト
-  PGresult *res;
-  char *dbHost  = "kite.cs.miyazaki-u.ac.jp";   // DBServerのホスト名
-  char *dbPort  = "5432";                       // DBServerのポート番号
-  char *dbName  = "db06";                       // データベース名
-  char *dbUser  = "dbuser06";                   // データベース・ユーザ
-  char *dbPwd   = "dbpass06";                   // データベース・ユーザのパスワード
-
-  char connInfo[BUFSIZE];
+int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, int __judgeFlag, char *__recvBuf) {
   char sql[BUFSIZE];
-  char recvBuf[BUFSIZE], sendBuf[BUFSIZE], comm[BUFSIZE], transferText[BUFSIZE];
+  char sendBuf[BUFSIZE], comm[BUFSIZE], transferText[BUFSIZE];
   char temp[BUFSIZE], commArg[BUFSIZE];
   int resultRows, cmdArgc, resultJudge, sendLen;
-  UserData userData = {"A0000000", 0};
 
-  /* データベース接続パラメータ設定 */
-  sprintf(connInfo, "host=%s port=%s dbname=%s user=%s password=%s",
-                      dbHost, dbPort, dbName, dbUser, dbPwd);
-
-  /* データベース接続 */
-  con = PQconnectdb(connInfo);
-
-  /* 接続状態確認 */
-  if(PQstatus(con) == CONNECTION_BAD) {
-    printf("Connection to database '%s:%s %s' failed.\n", dbHost, dbPort, dbName);
-    printf("%s", PQerrorMessage(con));
-    PQfinish(con);
-    exit(1);
-  }
-
-  /* スキーマ変更 */
-  sprintf(sql, "SET search_path to cmss");
-  res = PQexec(con, sql);
-
-  // コマンド
-  printf("ユーザ登録\n学籍番号 ユーザレベル\n");
-  fgets(recvBuf, BUFSIZE, stdin);
-  cmdArgc = sscanf(recvBuf, "%s %d", userData.id, &userData.level);
-
-  /***** IPOプロセス処理 *****/
-  printf("[判定]\n");
-  printf("コマンドを入力: ");
-  fgets(recvBuf, BUFSIZE, stdin);
-  cmdArgc = sscanf(recvBuf, "%s %s", comm, commArg);
+  cmdArgc = sscanf(__recvBuf, "%s %s", comm, commArg);
 
   if(!strcmp("rjudge", comm) && cmdArgc == 2) {
     /* 卒業研究着手判定 */
-    switch (userData.level) {
+    switch (__User->user_level) {
       case STUDENT:
-        if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 0);
+        if(!strcmp(__User->id, commArg)) {
+          judge_personal( __selfId, __con, __soc, commArg, 0);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
-          send(/*TODO: soc */, sendBuf, sendLen, 0);
+          send(__soc, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 0);
+          judge_list(__selfId, __con, __soc, __User, 0);
         }else {
-          judge_personal(con, commArg, 0);
+          judge_personal(__selfId, __con, __soc, commArg, 0);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 0);
+          judge_list(__selfId, __con, __soc, __User, 0);
         }else {
-          judge_personal(con, commArg, 0);
+          judge_personal( __selfId, __con, __soc, commArg, 0);
         }
         break;
     }// ここまで卒業研究着手判定
 
   }else if(!strcmp("gjudge", comm) && cmdArgc == 2) {
     /* 卒業判定 */
-    switch (userData.level) {
+    switch (__User->user_level) {
       case STUDENT:
-        if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 1);
+        if(!strcmp(__User->id, commArg)) {
+          judge_personal(__selfId, __con, __soc, commArg, 1);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
-          send(/*TODO: soc */, sendBuf, sendLen, 0);
+          send(__soc, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 1);
+          judge_list(__selfId, __con, __soc, __User, 1);
         }else {
-          judge_personal(con, commArg, 1);
+          judge_personal(__selfId, __con, __soc, commArg, 1);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 1);
+          judge_list(__selfId, __con, __soc, __User, 1);
         }else {
-          judge_personal(con, commArg, 1);
+          judge_personal(__selfId, __con, __soc, commArg, 1);
         }
         break;
     }// ここまで卒業判定
 
   }else if(!strcmp("cjudge", comm) && cmdArgc == 2) {
     /* 修了判定 */
-    switch (userData.level) {
+    switch (__User->user_level) {
       case STUDENT:
-        if(!strcmp(userData.id, commArg)) {
-          judge_personal(con, commArg, 2);
+        if(!strcmp(__User->id, commArg)) {
+          judge_personal(__selfId, __con, __soc, commArg, 2);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
           printf("%s", sendBuf);
-          send(/*TODO: soc */, sendBuf, sendLen, 0);
+          send(__soc, sendBuf, sendLen, 0);
           // printf("学籍番号が違います\n");
         }
         break;
       case CLASSTEACHER:
       case SUBTEACHER:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 2);
+          judge_list(__selfId, __con, __soc, __User, 2);
         }else {
-          judge_personal(con, commArg, 2);
+          judge_personal(__selfId, __con, __soc, commArg, 2);
         }
         break;
       case KYOMU:
       case STAFF:
       case DEPCHAIR:
         if(!strcmp(commArg, "00000000")) {
-          judge_list(con, userData, 2);
+          judge_list(__selfId, __con, __soc, __User, 2);
         }else {
-          judge_personal(con, commArg, 2);
+          judge_personal(__selfId, __con, __soc, commArg, 2);
         }
         break;
     }// ここまで修了判定
   }else {
-    sendLen = sprintf(sendBuf, "コマンドが違います%s", ENTER);
+    sendLen = sprintf(sendBuf, "引数が違います%s", ENTER);
     printf("%s", sendBuf);
     // printf("コマンドが違います\n");
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
   }
 
-  PQfinish(con);
+  PQfinish(__con);
 
   return 0;
 }// main End
@@ -211,7 +136,7 @@ int judge_main(int argc, char **argv) {
  * @param __judgeFlag 卒業研究：0　卒業：1　修了：2
  * @return int 成功: 0, エラー: -1
  */
-int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
+int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__studentNum, int __judgeFlag) {
   PGresult *res;
   int result, resultRows;
   char sql[BUFSIZE], temp[BUFSIZE];
@@ -232,7 +157,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 //TODO: エラー1
     sendLen = sprintf(sendBuf, "%s error_1%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("error_1\n");
     return -1;
   }
@@ -242,7 +167,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
 //TODO: エラー2
     sendLen = sprintf(sendBuf, "%s error_2%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("error_2\n");
     return -1;
   }
@@ -251,7 +176,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   if(result == 0) {
     sendLen = sprintf(sendBuf, "%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
 
   }else if(result == 1) {
@@ -278,7 +203,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
     // printf("%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
     sendLen = sprintf(sendBuf, "%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
 
     for (int i = 0; i < sizeof(creditList) / sizeof(*creditList); i++) {
       if(creditList[i][0] % 10 != 0) continue;
@@ -299,7 +224,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
               if(atoi(PQgetvalue(res, k, 1)) == 0) {
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
                 printf("%s", sendBuf);
-                send(/*TODO: soc */, sendBuf, sendLen, 0);
+                send(__soc, sendBuf, sendLen, 0);
                 // printf("%s\n", PQgetvalue(res, k , 0));
               }
             }
@@ -311,7 +236,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
                 selectFlag = 1;
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
                 printf("%s", sendBuf);
-                send(/*TODO: soc */, sendBuf, sendLen, 0);
+                send(__soc, sendBuf, sendLen, 0);
                 // printf("%s\n", PQgetvalue(res, k, 0));
               }
             }
@@ -320,7 +245,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
               selectFlag = 1;
               sendLen = sprintf(sendBuf, "**%sから%d単位必要**\n", listName[j], needCredit);
               printf("%s", sendBuf);
-              send(/*TODO: soc */, sendBuf, sendLen, 0);
+              send(__soc, sendBuf, sendLen, 0);
               // printf("**%sから%d単位必要**\n", listName[j], needCredit);
             }
             // if(selectFlag) printf("******\n");
@@ -332,18 +257,18 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
   }else if (result == 2) {
     sendLen = sprintf(sendBuf, "%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
   }else if (result = -1) {
     sendLen = sprintf(sendBuf, "データ未設定%s", ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("データ未設定\n");
   }else {
     // TODO: エラー3
     sendLen = sprintf(sendBuf, "%s error_3%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("%s error_3%s", ER_STAT, ENTER);
     return -1;
   }
@@ -360,7 +285,7 @@ int judge_personal(PGconn * __con, char *__studentNum, int __judgeFlag) {
  * @return int 成功: 0, エラー: -1
  */
 // TODO: SQLの改善
-int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
+int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, int __judgeFlag) {
   PGresult *res;
   char sql[BUFSIZE];
   int resultJudge, resultRows;
@@ -369,17 +294,17 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
   char sendBuf[BUFSIZE];
 
   /* 合否取得SQL作成 */
-  if(__user.level == CLASSTEACHER || __user.level == SUBTEACHER) {
-    sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (users.school_year = (SELECT school_year FROM users WHERE id = '%s'));", List[__judgeFlag], __user.id);
+  if(__User->user_level == CLASSTEACHER || __User->user_level == SUBTEACHER) {
+    sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (users.school_year = (SELECT school_year FROM users WHERE id = '%s'));", List[__judgeFlag], __User->id);
 
-  }else if(__user.level == STAFF || __user.level == DEPCHAIR || __user.level == ADMIN) {
+  }else if(__User->user_level == STAFF || __User->user_level == DEPCHAIR || __User->user_level == ADMIN) {
     sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (grade_judge.id LIKE 'B%%' OR grade_judge.id LIKE 'M%%' OR grade_judge.id LIKE 'D%%');", List[__judgeFlag]);
 
   }else {
 // TODO: エラー4
     sendLen = sprintf(sendBuf, "%s error_4%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("error_4\n");
     return -1;
   }
@@ -391,7 +316,7 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
 //TODO: エラー5
     sendLen = sprintf(sendBuf, "%s error_5%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("error_5\n");
     return -1;
   }
@@ -401,7 +326,7 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
 //TODO: エラー6
     sendLen = sprintf(sendBuf, "%s error_6%s", ER_STAT, ENTER);
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
     // printf("error_6\n");
     return -1;
   }
@@ -409,7 +334,7 @@ int judge_list(PGconn *__con, UserData __user, int __judgeFlag) {
   for (int i = 0; i < resultRows; i++) {
     sendLen = sprintf(sendBuf, "%s%s\t%s\t%s\n", sendBuf, PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
     printf("%s", sendBuf);
-    send(/*TODO: soc */, sendBuf, sendLen, 0);
+    send(__soc, sendBuf, sendLen, 0);
   }
 
   return 0;
