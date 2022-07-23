@@ -71,6 +71,7 @@ void service_start(int __lsoc){
       // send(s_new, sendBuf, sendLen, 0);
     }else{
       printf("Connected to database %s:%s %s\n", dbHost, dbPort, dbName);
+      PQexec(threadParam->con, "SET search_path to cmss;");
     }
       /* スレッドの生成 */
       pthread_create(&worker, NULL, (void *)*main_controller, (void *)threadParam);

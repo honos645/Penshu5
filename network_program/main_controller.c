@@ -21,9 +21,13 @@ void *main_controller(void *__arg){
   selfId = pthread_self(); //自分自身のスレッドIDを取得
   printf("[C_THREAD %ld] PMSS CONTROLLER START (%d)\n", selfId, threadParam->soc);
 
+    // recvLen = receive_message(threadParam->soc, recvBuf, BUFSIZE);
+    // recvBuf[recvLen-1] = '\0'; // <LF>を消去
+    // printf("[C_THREAD %ld] RECV=> %s\n", selfId, recvBuf);
+
   /* ログイン */
   flag = account_create(selfId, threadParam->con, threadParam->soc, User_Info);
-//
+
   // strcpy(User_Info->id, "B112002");
   // User_Info->user_level = 1;
   flag = 1;
