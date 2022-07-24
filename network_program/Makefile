@@ -10,19 +10,19 @@ SRCS	 = $(MAIN_SRC) $(USAMI) $(YANO) $(IKEIDO) $(KAMADA) $(AMAKI) $(TAIKI) $(KIT
 
 MAIN_SRC	= setup_listen.c pmss_server_main.c main_controller.c common_func.c
 
-USAMI	= judge.c
-
-# YANO	= count.c
-
 IKEIDO	= login.c
-
-KAMADA	= input_course.c
 
 # KITAZAWA = gpa_create.c
 
+TAIKI	= all_grade.c
+
 # AMAKI	=subject_regist.c
 
-TAIKI	= all_grade.c
+KAMADA	= input_course.c
+
+USAMI	= judge.c
+
+# YANO	= count.c
 
 HDRS	= $(MAIN_HDR) $(HDR)
 
