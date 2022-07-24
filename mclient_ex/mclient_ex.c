@@ -39,29 +39,18 @@ int main(int argc, char *argv[]){
 
   if(( s = setup_connect(argv[1], port)) < 0) exit(1);
 
-
-  // sendLen = sprintf(sendBuf, "start\n");
-  // send(s, sendBuf, sendLen, 0);
-  recvLen = recv_data(s, recvBuf, BUFSIZE_MAX); //データ終了デリミタまでサーバからデータ受信
-  recordCount = record_division(recvBuf, records);
-  for(i=0; i<recordCount; i++){
-      printf("[%2d]%s\n", i, records[i]);
-  }
-
-
-
   while(1){
-    fgets(sendBuf, BUFSIZE, stdin);           //標準入力から読み込み
-    if(strncmp(sendBuf,"exit",4) == 0)        //入力文字列の検証(文字列"exit"との比較
-      break;
-    sendLen = strlen(sendBuf);                //入力文字列のバイト数取得
-    send(s, sendBuf, sendLen, 0);             //サーバへ送信
     recvLen = recv_data(s, recvBuf, BUFSIZE_MAX); //データ終了デリミタまでサーバからデータ受信
     recordCount = record_division(recvBuf, records);
 
     for(i=0; i<recordCount; i++){
       printf("[%2d]%s\n", i, records[i]);
     }
+    fgets(sendBuf, BUFSIZE, stdin);           //標準入力から読み込み
+    if(strncmp(sendBuf,"exit",4) == 0)        //入力文字列の検証(文字列"exit"との比較
+      break;
+    sendLen = strlen(sendBuf);                //入力文字列のバイト数取得
+    send(s, sendBuf, sendLen, 0);             //サーバへ送信
   }
   close(s);
 }

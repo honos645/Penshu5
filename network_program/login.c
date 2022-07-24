@@ -57,7 +57,6 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
       send( __soc,sendBuf,sendLen,0);
       printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);
       printf("%s\n", PQresultErrorMessage(res));
-      PQfinish(__con);
       exit(1);
     }
 
@@ -69,7 +68,6 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
       sendLen = strlen(sendBuf);
       send( __soc,sendBuf,sendLen,0);
       printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);
-      return 0;
       count ++;
     }
     /* 結果の列数（フィールド数）を取得 */
@@ -94,23 +92,23 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
     // printf("%d\n",_user_info.sclool_year);
 
     //ユーザー名、学籍番号、ユーザーレベルを表示
-    sprintf(sendBuf, "ユーザー名：%s%s%s", __User_Info->person_name, ENTER, DATA_END);
+    sprintf(sendBuf, "ユーザー名：%s%s", __User_Info->person_name, ENTER);
   sendLen = strlen(sendBuf);
   send( __soc,sendBuf,sendLen,0);
   printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);
 
-  sprintf(sendBuf,"学籍番号：%s%s%s", __User_Info->id, ENTER, DATA_END);
+  sprintf(sendBuf,"学籍番号：%s%s", __User_Info->id, ENTER);
   sendLen = strlen(sendBuf);
   send( __soc,sendBuf,sendLen,0);
   printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);
 
-  sprintf(sendBuf,"ユーザーレベル：%d%s%s", __User_Info->user_level, ENTER, DATA_END);
+  sprintf(sendBuf,"ユーザーレベル：%d%s", __User_Info->user_level, ENTER);
   sendLen = strlen(sendBuf);
   send( __soc,sendBuf,sendLen,0);
   printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);
 
 
-  sprintf(sendBuf,"でログインしました。%s%s", ENTER, DATA_END);
+  sprintf(sendBuf,"でログインしました。\n%s", ENTER);
   sendLen = strlen(sendBuf);
   send( __soc,sendBuf,sendLen,0);
   printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);

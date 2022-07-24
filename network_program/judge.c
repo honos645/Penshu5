@@ -21,17 +21,17 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
 
   cmdArgc = sscanf(__recvBuf, "%s %s", comm, commArg);
 
-  if(!strcmp("rjudge", comm) && cmdArgc == 2) {
+  if(__judgeFlag == 0 && cmdArgc == 2) {
     /* 卒業研究着手判定 */
     switch (__User->user_level) {
       case STUDENT:
         if(!strcmp(__User->id, commArg)) {
+        printf("0\n");
           judge_personal( __selfId, __con, __soc, commArg, 0);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          printf("%s", sendBuf);
           send(__soc, sendBuf, sendLen, 0);
-          // printf("学籍番号が違います\n");
+          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
         }
         break;
       case CLASSTEACHER:
@@ -53,7 +53,7 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
         break;
     }// ここまで卒業研究着手判定
 
-  }else if(!strcmp("gjudge", comm) && cmdArgc == 2) {
+  }else if(__judgeFlag == 1 && cmdArgc == 2) {
     /* 卒業判定 */
     switch (__User->user_level) {
       case STUDENT:
@@ -61,9 +61,8 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
           judge_personal(__selfId, __con, __soc, commArg, 1);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          printf("%s", sendBuf);
           send(__soc, sendBuf, sendLen, 0);
-          // printf("学籍番号が違います\n");
+          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
         }
         break;
       case CLASSTEACHER:
@@ -85,7 +84,7 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
         break;
     }// ここまで卒業判定
 
-  }else if(!strcmp("cjudge", comm) && cmdArgc == 2) {
+  }else if(__judgeFlag == 2 && cmdArgc == 2) {
     /* 修了判定 */
     switch (__User->user_level) {
       case STUDENT:
@@ -93,9 +92,8 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
           judge_personal(__selfId, __con, __soc, commArg, 2);
         }else {
           sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          printf("%s", sendBuf);
           send(__soc, sendBuf, sendLen, 0);
-          // printf("学籍番号が違います\n");
+          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
         }
         break;
       case CLASSTEACHER:
@@ -118,14 +116,10 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
     }// ここまで修了判定
   }else {
     sendLen = sprintf(sendBuf, "引数が違います%s", ENTER);
-    printf("%s", sendBuf);
-    // printf("コマンドが違います\n");
     send(__soc, sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
   }
-
-  PQfinish(__con);
-
-  return 0;
+  return 1;
 }// main End
 
 /**
@@ -148,36 +142,33 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
 
   /* 合否取得SQL作成 例:personalJudge.sql*/
   sprintf(sql, "SELECT grade_judge.id, users.person_name, grade_judge.%s FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
-  // printf("%s\n", sql);
+  printf("%s\n", sql);
 
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
     printf("%s\n", PQresultErrorMessage(res));
 //TODO: エラー1
-    sendLen = sprintf(sendBuf, "%s error_1%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
+    sendLen = sprintf(sendBuf, "%s error_1%s%s", ER_STAT, ENTER, DATA_END);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("error_1\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
   resultRows = PQntuples(res);
   if(resultRows != 1) {
 //TODO: エラー2
-    sendLen = sprintf(sendBuf, "%s error_2%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
+    sendLen = sprintf(sendBuf, "%s error_2%s%s", ER_STAT, ENTER, DATA_END);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("error_2\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
   result = atoi(PQgetvalue(res, 0, 2));
   if(result == 0) {
     sendLen = sprintf(sendBuf, "%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("%s %s %s可能%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+    printf("[C_THREAD %ld] SEND=> %s%s%s", __selfId, sendBuf, ENTER, DATA_END);
 
   }else if(result == 1) {
     int flag = 0;
@@ -200,10 +191,11 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
         creditList[i][j - 1] = atoi(PQgetvalue(res, i, j));
       }
     }
-    // printf("%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
+
     sendLen = sprintf(sendBuf, "%s %s %s不可\n必要単位\n", OK_STAT, __studentNum, resultList[__judgeFlag]);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s%s%s", __selfId, sendBuf, ENTER, DATA_END);
+
 
     for (int i = 0; i < sizeof(creditList) / sizeof(*creditList); i++) {
       if(creditList[i][0] % 10 != 0) continue;
@@ -223,9 +215,8 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
             for (int k = 0; k < resultRows; k++) {
               if(atoi(PQgetvalue(res, k, 1)) == 0) {
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
-                printf("%s", sendBuf);
                 send(__soc, sendBuf, sendLen, 0);
-                // printf("%s\n", PQgetvalue(res, k , 0));
+                printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
               }
             }
 
@@ -235,41 +226,38 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
               if(atoi(PQgetvalue(res, k, 1)) == 0) {
                 selectFlag = 1;
                 sendLen = sprintf(sendBuf, "%s\n", PQgetvalue(res, k, 0));
-                printf("%s", sendBuf);
                 send(__soc, sendBuf, sendLen, 0);
-                // printf("%s\n", PQgetvalue(res, k, 0));
+                printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
               }
             }
 
             if(creditList[j][1] > 0) {
               selectFlag = 1;
               sendLen = sprintf(sendBuf, "**%sから%d単位必要**\n", listName[j], needCredit);
-              printf("%s", sendBuf);
               send(__soc, sendBuf, sendLen, 0);
-              // printf("**%sから%d単位必要**\n", listName[j], needCredit);
+              printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
             }
-            // if(selectFlag) printf("******\n");
           }
         }
       }
-      // printf("******\n");
     }
+    sendLen = sprintf(sendBuf, "%s", DATA_END);
+    send(__soc, sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
+
   }else if (result == 2) {
     sendLen = sprintf(sendBuf, "%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
   }else if (result = -1) {
     sendLen = sprintf(sendBuf, "データ未設定%s", ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("データ未設定\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
   }else {
     // TODO: エラー3
     sendLen = sprintf(sendBuf, "%s error_3%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("%s error_3%s", ER_STAT, ENTER);
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
@@ -303,9 +291,8 @@ int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
   }else {
 // TODO: エラー4
     sendLen = sprintf(sendBuf, "%s error_4%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("error_4\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
@@ -315,9 +302,8 @@ int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
     printf("%s\n", PQresultErrorMessage(res));
 //TODO: エラー5
     sendLen = sprintf(sendBuf, "%s error_5%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("error_5\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
@@ -325,16 +311,15 @@ int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
   if(resultRows < 0) {
 //TODO: エラー6
     sendLen = sprintf(sendBuf, "%s error_6%s", ER_STAT, ENTER);
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
-    // printf("error_6\n");
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
     return -1;
   }
 
   for (int i = 0; i < resultRows; i++) {
     sendLen = sprintf(sendBuf, "%s%s\t%s\t%s\n", sendBuf, PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
-    printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
   }
 
   return 0;

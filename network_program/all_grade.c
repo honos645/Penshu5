@@ -18,9 +18,9 @@
  **/
 
 #include "cmss.h"
-#include "all_grage_head.h"
+#include "all_grade_head.h"
 
-int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *User_Info){
+int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *__User_Info){
   PGresult *res;
   char sql[BUFSIZE];
   char comm[BUFSIZE];
@@ -37,39 +37,32 @@ int all_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, cha
   int ranking; //生徒の席次
   int  exam_classification;
   char classification[][BUFSIZE] = {"推薦入試","総合選抜","前期日程","後期日程","編入試（推薦）","編入試（一般）","私費外国人"}; //入試区分の変換
-  UserInfo __User_Info;
+  //UserInfo __User_Info;
 
   /*プロトコル、コマンド引数取得*/
   n = sscanf(__recvBuf, "%s %s %s %d %s", comm, department, major, &school_year, sort);
   if( n != 5 ){
-    sprintf(__recvBuf, "%s %d%s", ER_STAT, E_CODE_2, ENTER);
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_2, ENTER);
     return -1;
   }
 
-  /*sprintf(sql, "SET search_path to netbank");
-    PQexec(__con, sql);*/
+  sprintf(sql, "SET search_path to cmss");
+  PQexec(__con, sql);
 
-  /*recvLen = recive_message(__soc, __recvBuf, BUFSIZE);
-  if( recvLen < 1){
-    break;
-  }
-  __recvBuf[recvLen-1] = '\0';
+  __User_Info->user_level = 0;
+  strcpy(__User_Info->department,"0");
+  strcpy(__User_Info->major, "0");
+  __User_Info->school_year = 1;
 
-  n = sscanf(__recvBuf, "%d %d %d %s", &department, &major, &school_year, sort);*/
-
-  /*__User_Info.level = '0';
-  __User_Info.department = '0';
-  __User_Info.major = '0';
-  __User_Info.school_year = '1';*/
-
-  if( User_Info->user_level == '1'){
-    printf("error:閲覧権限がありません。\n");
+  if( __User_Info->user_level == '0'){
+    printf("error:閲覧権限がありません。0\n");
+    //__User_Info->user_level = 1;
     sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
     return -1;
   }
 
-  if( User_Info->user_level == '4' || User_Info->user_level == '5'){
-    if( User_Info->department != department || User_Info->major != major || User_Info->school_year == school_year ){
+  if( __User_Info->user_level == '4' || __User_Info->user_level == '5'){
+    if( __User_Info->department != department || __User_Info->major != major || __User_Info->school_year == school_year ){
       printf("error:閲覧権限がありません。\n");
       sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
       return -1;
