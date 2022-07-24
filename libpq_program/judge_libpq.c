@@ -55,9 +55,9 @@ int main(int argc, char **argv) {
   PGresult *res;
   char *dbHost  = "kite.cs.miyazaki-u.ac.jp";   // DBServerのホスト名
   char *dbPort  = "5432";                       // DBServerのポート番号
-  char *dbName  = "db06";                       // データベース名
-  char *dbUser  = "dbuser06";                   // データベース・ユーザ
-  char *dbPwd   = "dbpass06";                   // データベース・ユーザのパスワード
+  char *dbName  = "db02";                       // データベース名
+  char *dbUser  = "dbuser02";                   // データベース・ユーザ
+  char *dbPwd   = "dbpass02";                   // データベース・ユーザのパスワード
 
   char connInfo[BUFSIZE];
   char sql[BUFSIZE];

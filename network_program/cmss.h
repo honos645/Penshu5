@@ -41,13 +41,13 @@
 #define ER_STAT    "-ERR"    //失敗
 
 //*** エラーコード ***//
-#define E_CODE_1    100  //指定された口座IDの預金口座が存在しない
-#define E_CODE_2    200  //指定された金額が適切でない
-#define E_CODE_3    300  //貯金限度額を超えている
-#define E_CODE_4    400  //借り入れ金額を下回っている
-#define E_CODE_5    500  //リクエストコマンドの引数エラー
-#define E_CODE_6    600  //リクエストコマンドが存在しない
-#define E_CODE_7    700  //データベースエラー
+#define E_CODE_1    100  //
+#define E_CODE_2    200  //
+#define E_CODE_3    300  //
+#define E_CODE_4    400  //
+#define E_CODE_5    500  //
+#define E_CODE_6    600  //
+#define E_CODE_7    700  //
 
 
 //*** スレッド関数に渡す引数情報構造体 ***//
@@ -75,7 +75,7 @@ extern int personal_grade(pthread_t __selfId, PGconn *__con, int __soc, char *__
 extern int all_grade(pthread_t selfId, PGconn *__con, int __soc, char *recvBuf, char *sendBuf, UserInfo *__User_Info);
 extern int subject_regist(pthread_t selfId, PGconn *con, int __soc, char *recvBuf, char *sendBuf, UserInfo *__User_Info);
 extern int input_course(pthread_t __selfId, PGconn *__con, int __soc, char *__sendBuf, UserInfo *__User_Info);
-extern int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, int __judgeFlag, char *__recvBuf);
+extern int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User_Info, char *__sendBuf, char *__recvBuf, int __judgeFlag);
 extern int graduate_count(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *__User_Info);
 // extern int count(pthread_t selfId, PGconn *con, int soc, char *recvBuf, char *sendBuf);
 

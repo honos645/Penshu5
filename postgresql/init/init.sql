@@ -26,6 +26,7 @@ SET search_path to cmss;
 
 --サンプルデータ登録
 \COPY admission FROM /data/admission.csv DELIMITER AS ','
+\COPY classification_name FROM /data/classification_name.csv DELIMITER AS ','
 \COPY entrance FROM /data/entrance.csv DELIMITER AS ','
 \COPY entrance_route FROM /data/entrance_route.csv DELIMITER AS ','
 \COPY grade_judge FROM /data/grade_judge.csv DELIMITER AS ','

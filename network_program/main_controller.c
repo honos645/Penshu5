@@ -52,7 +52,7 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, SUBJECT_REGIST) == 0){
       /* 科目登録 */
-      // errorFlag = subject_regist(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
+      errorFlag = subject_regist(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
 
     }else if(strcmp(comm, INPUT_COURSE) == 0){
       /* 進路入力 */
@@ -60,14 +60,14 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, PJUDGE) == 0){
       /* 卒業着手判定*/
-      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, 0, recvBuf);
+      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, sendBuf, recvBuf, 0);
 
     }else if(strcmp(comm, GJUDGE) == 0){
       /* 卒業判定 */
-      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, 1, recvBuf);
+      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, sendBuf, recvBuf, 1);
     }else if(strcmp(comm, CJUDGE) == 0){
       /* 終了判定 */
-      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, 2, recvBuf);
+      errorFlag = judge_main(selfId, threadParam->con, threadParam->soc, User_Info, sendBuf, recvBuf, 2);
 
     }else if(strcmp(comm, GRADUATE_COUNT) == 0){
       /* 卒業者・留年者 */

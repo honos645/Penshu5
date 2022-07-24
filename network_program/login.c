@@ -77,19 +77,14 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
     if(resultRows == 1) break;
   }
 
+  if(count >= 3) return 0;
+
     strcpy( __User_Info->id, PQgetvalue(res, 0, 2));
     strcpy( __User_Info->person_name, PQgetvalue(res, 0, 3));
     strcpy( __User_Info->major, PQgetvalue(res, 0, 10));
     strcpy( __User_Info->department, PQgetvalue(res, 0, 9));
     __User_Info->user_level = atoi(PQgetvalue(res, 0, 7));
     __User_Info->school_year = atoi(PQgetvalue(res, 0, 11));
-    //結果（テスト）
-    // printf("%s\n",_user_info.id);
-    // printf("%s\n",_user_info.person_name);
-    // printf("%d\n",_user_info.user_level);
-    // printf("%s\n",_user_info.undergraduate_name);
-    // printf("%s\n",_user_info.depertment_name);
-    // printf("%d\n",_user_info.sclool_year);
 
     //ユーザー名、学籍番号、ユーザーレベルを表示
     sprintf(sendBuf, "ユーザー名：%s%s", __User_Info->person_name, ENTER);

@@ -16,11 +16,11 @@ IKEIDO	= login.c
 
 TAIKI	= all_grade.c
 
-# AMAKI	=subject_regist.c
+AMAKI	=subject_regist.c
 
 KAMADA	= input_course.c
 
-USAMI	= judge.c
+USAMI	= judge_main.c
 
 # YANO	= count.c
 
@@ -28,7 +28,7 @@ HDRS	= $(MAIN_HDR) $(HDR)
 
 MAIN_HDR	= cmss.h
 
-HDR	=  judge_head.h all_grade_head.h #gpa_create_head.h
+HDR	=  judge.h all_grade_head.h #gpa_create_head.h
 
 OBJS	= $(SRCS:.c=.o)
 

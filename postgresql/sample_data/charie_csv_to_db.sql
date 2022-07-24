@@ -7,6 +7,7 @@
 SET search_path to cmss;
 
 \COPY admission FROM ./admission.csv DELIMITER AS ','
+\COPY classification_name FROM ./classification_name.csv DELIMITER AS ','
 \COPY entrance FROM ./entrance.csv DELIMITER AS ','
 \COPY entrance_route FROM ./entrance_route.csv DELIMITER AS ','
 \COPY grade_judge FROM ./grade_judge.csv DELIMITER AS ','

@@ -28,7 +28,7 @@ FROM
         FROM
           subject_grade
         WHERE
-          subject_grade.id = 'B1120002'
+          subject_grade.id = 'B1120009'
       ) AS grade
       ON subject_detail.subject_code = grade.subject_code
       AND subject_detail.opening_year = grade.opening_year
