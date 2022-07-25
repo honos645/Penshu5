@@ -32,9 +32,9 @@ int main(int argc, char *argv[]){
 void service_start(int __lsoc){
   char *dbHost  = "kite.cs.miyazaki-u.ac.jp";
   char *dbPort  = "5432";
-  char *dbName  = "db02"; //データベース名
-  char *dbLogin = "dbuser02";
-  char *dbPwd   = "dbpass02";
+  char *dbName  = "db01"; //データベース名
+  char *dbLogin = "dbuser01";
+  char *dbPwd   = "dbpass01";
   char connInfo[BUFSIZE];
   pthread_t worker;        //スレッドID用
   ThreadParameter *threadParam;  //スレッド引数用構造体

@@ -40,11 +40,12 @@ void *main_controller(void *__arg){
     /* コマンドに対応するモジュールを呼び出す */
     if(strcmp(comm, GPA_CREATE) == 0){
       /* 個人ＧＰＡ算出 */
-      // errorFlag = gpa_create(selfId, threadParam->con, threadParam->soc, recvBuf, User_Info);
+      errorFlag = gpa_create(selfId, threadParam->con, threadParam->soc, recvBuf, User_Info);
 
     }else if(strcmp(comm, PERSONAL_GRADE)==0){
       /* 個人成績閲覧 */
-      // errorFlag = personal_grade(selfId, threadParam->con, threadParam->soc, recvBuf, User_Info);
+      printf("1\n");
+      errorFlag = personal_grade(selfId, threadParam->con, threadParam->soc, recvBuf, User_Info);
 
     }else if(strcmp(comm, ALL_GRADE) == 0){
       /* 成績一覧 */
@@ -71,7 +72,7 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, GRADUATE_COUNT) == 0){
       /* 卒業者・留年者 */
-      //errorFlag = graduate_count(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
+      errorFlag = graduate_count(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
 
     }else{
       errorFlag = -1;

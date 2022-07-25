@@ -3,17 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gpa_create_head.h"
+#include "cmss.h"
+#include "gpa_create.h"
 
 #include <postgresql/libpq-fe.h>
 
-int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,UserInfo __User_Info){
+int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,UserInfo *__User_Info){
   char recvBuf[BUFSIZE], sendBuf[BUFSIZE], comm[BUFSIZE], transferText[BUFSIZE];
-  int resultRows, n;
+  int resultRows, n, sendLen;
 
+  PGresult *res;
   char q_id[BUFSIZE];
 
-  char sql_stu_name[BUFSIZE], sql_stu_department[BUFSIZE], sql_stu_major[BUFSIZE];
+  char sql[BUFSIZE], sql_stu_name[BUFSIZE], sql_stu_department[BUFSIZE], sql_stu_major[BUFSIZE];
   int sql_stu_level, sql_stu_year, sql_stu_retake;
 
   int i, j , tmp, sum = 0, bottom = 0;
@@ -23,16 +25,11 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
   n = sscanf(__recvBuf, "%s %s", comm, q_id);
 
   if(n != 2){
-    sprintf(sendBuf,"%s %d%s", ER_STAT, E_CODE_1, ENTER);
+    sendLen = sprintf(sendBuf,"%s %d%s", ER_STAT, E_CODE_5, ENTER);
     printf("%s", sendBuf);
-    send(__soc, sendBuf, BUFSIZE, 0);
+    send(__soc, sendBuf, sendLen, 0);
     return -1;
   }
-
-
-  /*スキーマ検索パスを変更 */
-  sprintf(sql, "SET search_path to cmss");
-  PQexec(con, sql);
 
   //get studentinfo
   sprintf(sql, "SELECT id, person_name, user_level, department, major, school_year FROM users WHERE id = %s;", q_id);
@@ -54,20 +51,22 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
 
 
   //check userlevel
-  if(__User_Info.user_level != ADMIN || __User_Info.user_level != CLERK || __User_Info.user_level != TEACH_COM || __User_Info.user_level != CHAIR){
-    if(__User_Info.user_level == STUDENT && strcmp(__User_Info.id, q_id)!=0){
-      sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_3, ENTER);
+  if(__User_Info->user_level != ADMIN || __User_Info->user_level != CLERK || __User_Info->user_level != TEACH_COM || __User_Info->user_level != CHAIR){
+    if(__User_Info->user_level == STUDENT && strcmp(__User_Info->id, q_id)!=0){
+      sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
       printf("%s", sendBuf);
       send(__soc, sendBuf, BUFSIZE, 0);
+      printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
       return -1;
-    }else if(!(__User_Info.user_level == TEACH_HR || __User_Info.user_level == TEACH_VHR
-	       && __User_Info.school_year == sql_stu_year
-	       && strcmp(__User_Info.department, sql_stu_department) == 0
-	       && __User_Info.major == sql_stu_major
-	       && __User_Info.school_year == sql_stu_year)){
-      sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_3, ENTER);
+    }else if(!(__User_Info->user_level == TEACH_HR || __User_Info->user_level == TEACH_VHR
+	       && __User_Info->school_year == sql_stu_year
+	       && strcmp(__User_Info->department, sql_stu_department) == 0
+	       && __User_Info->major == sql_stu_major
+	       && __User_Info->school_year == sql_stu_year)){
+      sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
       printf("%s", sendBuf);
       send(__soc, sendBuf, BUFSIZE, 0);
+      printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
       return -1;
     }
   }
@@ -83,9 +82,10 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
   res = PQexec(con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK){
     printf("%s\n", PQresultErrorMessage(res));
-    sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_2, ENTER);
+    sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
     printf("%s", sendBuf);
     send(__soc, sendBuf, BUFSIZE, 0);
+    printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
     return -1;
   }
 
@@ -175,14 +175,12 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
 	      sprintf(subclass, "専門選択科目");
 	    }
 
-	  sprintf(sendBuf, "20%d %s %s: %f\n", j / 2 + atoi(stu_ent_year), termel, subclass, gpa[i][j]);
+	  sendLen = sprintf(sendBuf, "20%d %s %s: %f\n", j / 2 + atoi(stu_ent_year), termel, subclass, gpa[i][j]);
 	  printf("%s", sendBuf);
-          send(__soc, sendBuf, BUFSIZE, 0);
+          send(__soc, sendBuf, sendLen, 0);
+	  printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
 	}
     }
-
-  /* データベース接続を切断 */
-  PQfinish(con);
 
   return 0;
 }

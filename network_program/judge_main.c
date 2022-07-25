@@ -9,107 +9,84 @@ int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, c
 
   cmdArgc = sscanf(__recvBuf, "%s %s", comm, commArg);
 
-  if(__judgeFlag == 0 && cmdArgc == 2) {
-    /* 卒業研究着手判定 */
-    switch (__User->user_level) {
-      case STUDENT:
-        if(!strcmp(__User->id, commArg)) {
-          errorFlag = judge_personal( __selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
-        }else {
-          sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          send(__soc, sendBuf, sendLen, 0);
-          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
-        }
-        break;
-      case CLASSTEACHER:
-      case SUBTEACHER:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, PROMOTION, __sendBuf);
-        }else {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
-        }
-        break;
-      case ADMIN:
-      case KYOMU:
-      case STAFF:
-      case DEPCHAIR:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, PROMOTION, __sendBuf);
-        }else {
-          errorFlag = judge_personal( __selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
-        }
-        break;
-    }// ここまで卒業研究着手判定
-
-  }else if(__judgeFlag == 1 && cmdArgc == 2) {
-    /* 卒業判定 */
-    switch (__User->user_level) {
-      case STUDENT:
-        if(!strcmp(__User->id, commArg)) {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
-        }else {
-          sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          send(__soc, sendBuf, sendLen, 0);
-          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
-        }
-        break;
-      case CLASSTEACHER:
-      case SUBTEACHER:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, GRADUATION, __sendBuf);
-        }else {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
-        }
-        break;
-      case ADMIN:
-      case KYOMU:
-      case STAFF:
-      case DEPCHAIR:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, GRADUATION, __sendBuf);
-        }else {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
-        }
-        break;
-    }// ここまで卒業判定
-
-  }else if(__judgeFlag == 2 && cmdArgc == 2) {
-    /* 修了判定 */
-    switch (__User->user_level) {
-      case STUDENT:
-        if(!strcmp(__User->id, commArg)) {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
-        }else {
-          sendLen = sprintf(sendBuf, "学籍番号が違います%s", ENTER);
-          send(__soc, sendBuf, sendLen, 0);
-          printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
-        }
-        break;
-      case CLASSTEACHER:
-      case SUBTEACHER:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, COMPLETION, __sendBuf);
-        }else {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
-        }
-        break;
-      case ADMIN:
-      case KYOMU:
-      case STAFF:
-      case DEPCHAIR:
-        if(!strcmp(commArg, "00000000")) {
-          errorFlag = judge_list(__selfId, __con, __soc, __User, COMPLETION, __sendBuf);
-        }else {
-          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
-        }
-        break;
-    }// ここまで修了判定
-  }else {
-    sendLen = sprintf(sendBuf, "引数が違います%s", ENTER);
+  if(cmdArgc != 2) {
+    sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_5, ENTER);
     send(__soc, __sendBuf, sendLen, 0);
     printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);
-    errorFlag = -1;
+    return -1;
   }
+
+  switch(__User->user_level) {
+    case STUDENT:
+      if(!strcmp(__User->id, commArg)){
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
+        }
+      }else {
+        sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_5, ENTER);
+        return -1;
+      }
+      break;
+    case CLERK:
+      printf("%s\n", commArg);
+      if(strlen(commArg) == 4){
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, COMPLETION, __sendBuf);
+        }
+      }else if(!strcmp(commArg, "00000000")){
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, COMPLETION, __sendBuf);
+        }
+      }else if(strlen(commArg) == 8) {
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
+        }
+      }
+      break;
+    case TEACH:
+    case TEACH_HR:
+    case TEACH_VHR:
+    case TEACH_COM:
+    case TEACH_W_HR:
+    case TEACH_W:
+    case CHAIR:
+    case ADMIN:
+      if(!strcmp(commArg, "00000000")){
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_list(__selfId, __con, __soc, __User, commArg, COMPLETION, __sendBuf);
+        }
+      }else {
+        if(__judgeFlag == PROMOTION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, PROMOTION, __sendBuf);
+        }else if(__judgeFlag == GRADUATION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, GRADUATION, __sendBuf);
+        }else if(__judgeFlag == COMPLETION) {
+          errorFlag = judge_personal(__selfId, __con, __soc, commArg, COMPLETION, __sendBuf);
+        }
+      }
+      break;
+  }
+
   return errorFlag;
 }// main End
 
@@ -126,21 +103,19 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
 
   /* 合否取得SQL作成 例:personalJudge.sql*/
   sprintf(sql, "SELECT grade_judge.id, users.person_name, grade_judge.%s FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
-  // printf("%s\n", sql);
 
   /* SQL実行 */
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
     printf("%s\n", PQresultErrorMessage(res));
-//TODO: エラー1
-    sendLen = sprintf(__errorBuf, "%s error_1%s", ER_STAT, ENTER);
+    sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
   resultRows = PQntuples(res);
   if(resultRows != 1) {
-//TODO: エラー2
-    sendLen = sprintf(__errorBuf, "%s error_2%s", ER_STAT, ENTER);
+//TODO: エラー7
+    sendLen = sprintf(__errorBuf, "%s %daaa%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
@@ -159,12 +134,18 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
     }
     /* 単位数比較表SQL 例:personalJudge2.sql */
     sprintf(sql, "SELECT classification_name.name ,subject_classification_%s.classification, subject_classification_%s.required_credit, CASE WHEN credit.sum IS NULL THEN 0 ELSE credit.sum END, subject_classification_%s.absolute_option FROM subject_classification_%s LEFT OUTER JOIN(SELECT subject_detail.classification, SUM(subject_detail.credit) AS SUM FROM subject_detail LEFT OUTER JOIN(SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s') AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND (grade.grade_point >= 60 AND grade.grade_point <= 100) GROUP BY subject_detail.classification) AS credit ON subject_classification_%s.classification = credit.classification INNER JOIN classification_name on subject_classification_%s.classification = classification_name.code;", creditTable[__judgeFlag], creditTable[__judgeFlag], creditTable[__judgeFlag], creditTable[__judgeFlag], __studentNum, temp, creditTable[__judgeFlag], creditTable[__judgeFlag]);
-    // printf("%s\n", sql);
 
     res = PQexec(__con, sql);
+    if(PQresultStatus(res) != PGRES_TUPLES_OK) {
+      printf("%s\n", PQresultErrorMessage(res));
+      sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
+      return -1;
+    }
     resultRows = PQntuples(res);
+
     int creditList[resultRows][4];
     char listName[resultRows][BUFSIZE];
+
     for (int i = 0; i < resultRows; i++) {
       strcpy(listName[i], PQgetvalue(res, i, 0));
       for (int j = 1; j < 5; j++) {
@@ -190,6 +171,11 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
         sprintf(sql, "SELECT subject_detail.subject_name, subject_detail.necessary FROM subject_detail LEFT OUTER JOIN (SELECT subject_grade.subject_code, subject_grade.opening_year, subject_grade.id, CONCAT(SUBSTRING(subject_grade.id, 1, 3), SUBSTRING(subject_grade.id, 5, 1)) AS available, subject_grade.grade_point FROM subject_grade WHERE subject_grade.id = '%s' ) AS grade ON subject_detail.subject_code = grade.subject_code AND subject_detail.opening_year = grade.opening_year AND subject_detail.courses_available = grade.available WHERE subject_detail.courses_available = '%s' AND subject_detail.classification = %d AND grade.grade_point IS NULL GROUP BY subject_detail.subject_name, subject_detail.necessary ORDER BY subject_detail.necessary ASC;", __studentNum, "B110", creditList[j][0]);
         printf("%s\n", sql);
         res = PQexec(__con, sql);
+        if(PQresultStatus(res) != PGRES_TUPLES_OK) {
+          printf("%s\n", PQresultErrorMessage(res));
+          sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
+          return -1;
+        }
         resultRows = PQntuples(res);
 
         if(needCredit > 0) {
@@ -225,13 +211,8 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
     sendLen = sprintf(sendBuf, "%s %s %s保留%s", OK_STAT, __studentNum, resultList[__judgeFlag], ENTER);
     send(__soc, sendBuf, sendLen, 0);
     printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
-  }else if (result = -1) {
-    sendLen = sprintf(sendBuf, "データ未設定%s", ENTER);
-    send(__soc, sendBuf, sendLen, 0);
-    printf("[C_THREAD %ld] SEND=> %s%s", __selfId, sendBuf, ENTER);
   }else {
-    // TODO: エラー3
-    sendLen = sprintf(__errorBuf, "%s error_3%s", ER_STAT, ENTER);
+    sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
@@ -239,7 +220,7 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
 }// judge_personal End
 
 
-int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, int __judgeFlag, char *__errorBuf) {
+int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, char *__recvBuf, int __judgeFlag, char *__errorBuf) {
   PGresult *res;
   char sql[BUFSIZE];
   int resultJudge, resultRows;
@@ -247,33 +228,44 @@ int judge_list(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, i
   int sendLen = 0;
   char sendBuf[BUFSIZE];
 
+  printf("0\n");
   /* 合否取得SQL作成 */
-  if(__User->user_level == CLASSTEACHER || __User->user_level == SUBTEACHER) {
+  if(__User->user_level == TEACH_HR || __User->user_level == TEACH_VHR || __User->user_level == TEACH_COM) {
     sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (users.school_year = (SELECT school_year FROM users WHERE id = '%s'));", List[__judgeFlag], __User->id);
 
-  }else if(__User->user_level == STAFF || __User->user_level == DEPCHAIR || __User->user_level == ADMIN) {
+  }else if(__User->user_level == CHAIR || __User->user_level == ADMIN) {
     sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (grade_judge.id LIKE 'B%%' OR grade_judge.id LIKE 'M%%' OR grade_judge.id LIKE 'D%%');", List[__judgeFlag]);
+
+  }else if(__User->user_level == CLERK) {
+    if(strlen(__recvBuf) == 4) {
+      sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE grade_judge.id LIKE 'B%c%c%s%%' OR grade_judge.id LIKE 'M%c%c%s%%' OR grade_judge.id LIKE 'D%c%c%s%%';", List[__judgeFlag], __User->id[1], __User->id[2], __recvBuf + 2, __User->id[1], __User->id[2], __recvBuf + 2, __User->id[1], __User->id[2], __recvBuf + 2);
+      printf("%s\n", sql);
+    }else {
+      sprintf(sql, "SELECT grade_judge.id, users.person_name, CASE WHEN grade_judge.%s = 0 THEN '可' ELSE '不可' END AS judge FROM grade_judge INNER JOIN users ON grade_judge.id=users.id WHERE (grade_judge.id LIKE 'B%%' OR grade_judge.id LIKE 'M%%' OR grade_judge.id LIKE 'D%%');", List[__judgeFlag]);
+      printf("%s\n", sql);
+    }
 
   }else {
 // TODO: エラー4
-    sendLen = sprintf(__errorBuf, "%s error_4%s", ER_STAT, ENTER);
+    sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
     return -1;
   }
 
   /* SQL実行 */
-  printf("%s\n", sql);
   res = PQexec(__con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK) {
     printf("%s\n", PQresultErrorMessage(res));
-//TODO: エラー5
-    sendLen = sprintf(__errorBuf, "%s error_5%s", ER_STAT, ENTER);
+    printf("1\n");
+    // TODO: エラー7
+    sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
   resultRows = PQntuples(res);
-  if(resultRows < 0) {
-//TODO: エラー6
-    sendLen = sprintf(__errorBuf, "%s error_6%s", ER_STAT, ENTER);
+  if(resultRows < 1) {
+//TODO: エラー7
+    printf("2\n");
+    sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
