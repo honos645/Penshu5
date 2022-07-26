@@ -64,7 +64,7 @@ int account_create(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__Use
     /* 結果の行数（レコード数）を取得 */
     resultRows = PQntuples(res);
     if(resultRows==0){
-      sprintf(sendBuf,"ユーザが存在しません%s%s", ENTER, DATA_END);
+      sprintf(sendBuf,"ユーザが存在しません%s", ENTER);
       sendLen = strlen(sendBuf);
       send( __soc,sendBuf,sendLen,0);
       printf("[C _THREAD %ld] SEND => %s\n",__selfId,sendBuf);

@@ -1,0 +1,162 @@
+/**
+ *  gcc all_judge.c -o all_judge -lpq
+ **/
+
+/**
+ *  学籍番号順、席次順を入試区分別に表示
+ *   [ARGUMENT]
+ *    __selfId            : スレッド
+ *    __con               : PGconnオブジェクト
+ *    __soc               : ソケットディスクリプタ
+ *    __department        : 表示する学部
+ *    __major             : 表示する学科
+ *    __school_year       : 表示する学年
+ *    __sendBuf           : 送信用配列のポインタ
+ *   [RETURN]
+ *    Success   : 0
+ *    Error     : -1
+ **/
+
+#include "cmss.h"
+#include "all_judge_head.h"
+
+int all_judge(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *__User_Info){
+  PGresult *res;
+  char sql[BUFSIZE];
+  char comm[BUFSIZE];
+  int resultRows, n, i, j, sendLen, recvLen;
+  int exam;
+  //int comm; //コマンド
+  char department[BUFSIZE]; //学部
+  char major[BUFSIZE]; //学科
+  int school_year; //学年
+  char sort[BUFSIZE]; //ソート手順
+  char *id; //生徒の学籍番号
+  char *name; //生徒の名前
+  int promotion_judge; //生徒の進級判定
+  int graduation_judge; //生徒の卒業判定
+  int  exam_classification;
+  char classification[][BUFSIZE] = {"推薦入試","総合選抜","前期日程","後期日程","編入試（推薦）","編入試（一般）","私費外国人"}; //入試区分の変換
+  char judge[][BUFSIZE] = {"未設定", "合", "否", "保留"};//判定の変換
+  //UserInfo __User_Info;
+
+  /*プロトコル、コマンド引数取得*/
+  n = sscanf(__recvBuf, "%s %s %s %d %s", comm, department, major, &school_year, sort);
+  if( n != 5 ){
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_2, ENTER);
+    return -1;
+  }
+
+  sprintf(sql, "SET search_path to cmss");
+  PQexec(__con, sql);
+
+  __User_Info->user_level = 0;
+  strcpy(__User_Info->department,"0");
+  strcpy(__User_Info->major, "0");
+  __User_Info->school_year = 1;
+
+  if( __User_Info->user_level == '0'){
+    printf("error:閲覧権限がありません。0\n");
+    //__User_Info->user_level = 1;
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
+    return -1;
+  }
+
+  if( __User_Info->user_level == '4' || __User_Info->user_level == '5'){
+    if( __User_Info->department != department || __User_Info->major != major || __User_Info->school_year == school_year ){
+      printf("error:閲覧権限がありません。\n");
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
+      return -1;
+    }
+  }
+
+  if( strcmp(sort, GPA) == 0 || strcmp(sort, ID) == 0){
+    if( strcmp(sort, ID) == 0 ){
+      sprintf(sql, "SELECT b.id, a.person_name, b.promotion_judge, b.graduation_judge FROM users AS a INNER JOIN grade_judge AS b ON a.id = b.id WHERE department = '%s' AND major = '%s' AND school_year = '%d' ORDER BY b.id", department, major, school_year );
+    }else if( strcmp(sort, GPA) == 0 ){
+      sprintf(sql, "SELECT b.id, a.person_name, b.promotion_judge, b.graduation_judge FROM users AS a INNER JOIN grade_judge AS b ON a.id = b.id WHERE department = '%s' AND major = '%s' AND school_year = '%d' ORDER BY b.grade_ranking", department, major, school_year );
+    }
+
+    printf("[%s]\n", sql);
+    res = PQexec(__con, sql);
+    if(PQresultStatus(res) != PGRES_TUPLES_OK){
+      printf("%s\n", PQresultErrorMessage(res));
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+      printf("%s", __sendBuf);
+      return -1;
+    }
+
+    resultRows = PQntuples(res);
+    if(resultRows < 0){
+      sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+      printf("%s", __sendBuf);
+      return -1;
+    }
+
+    sendLen = sprintf(__sendBuf, "%s %d%s", OK_STAT, resultRows, ENTER);
+    send(__soc, __sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);
+
+    sendLen = sprintf(__sendBuf, "学籍番号 名前 進級判定 卒業判定%s", ENTER);
+    send(__soc, __sendBuf, sendLen, 0);
+    printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);
+
+    for(i=0; i<resultRows; i++){
+      id = PQgetvalue(res, i, 0); //0 番目のフィールド値を取得
+      name = PQgetvalue(res, i, 1); //1 番目のフィールド値を取得
+      promotion_judge = atoi(PQgetvalue(res, i, 2)); //2 番目のフィールド値を取得
+      graduation_judge = atoi(PQgetvalue(res, i, 3)); //3 番目のフィールド値を取得
+      sendLen = sprintf(__sendBuf, "%s %s %s %s%s", id, name, judge[promotion_judge+1], judge[graduation_judge+1], ENTER);
+      /*プロトコル、レスポンスを送信*/
+      send(__soc, __sendBuf, sendLen, 0);
+      printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);
+    }
+  }else if( strcmp(sort, EXAM_GPA) == 0 || strcmp(sort, EXAM_ID) == 0 ){
+    sendLen = sprintf(__sendBuf, "学籍番号 名前  進級判定 卒業判定 入試区分%s", ENTER);
+    send(__soc, __sendBuf, sendLen, 0);
+    for(i=0; i<8; i++){ //入試区分ごとに表示する
+      if( strcmp(sort, EXAM_ID) == 0 ){ //入試区分別学籍番号順
+	sprintf(sql, "SELECT b.id, a.person_name,  b.promotion_judge, b.graduation_judge, c.exam_classification FROM users AS a INNER JOIN grade_judge AS b ON a.id = b.id INNER JOIN entrance as c on a.id = c.id WHERE department = '%s' AND major = '%s' AND school_year = '%d' AND exam_classification = %d ORDER BY b.id", department, major, school_year, i);
+      }else if( strcmp(sort, EXAM_GPA) == 0 ){ //入試区分別席次順
+	sprintf(sql, "SELECT b.id, a.person_name,  b.promotion_judge, b.graduation_judge, c.exam_classification FROM users AS a INNER JOIN grade_judge AS b ON a.id = b.id INNER JOIN entrance as c on a.id = c.id WHERE department = '%s' AND major = '%s' AND school_year = '%d' AND exam_classification = '%d' ORDER BY b.grade_ranking", department, major, school_year, i);
+      }
+      //printf("[%s]\n", sql);
+      res = PQexec(__con, sql);
+      if(PQresultStatus(res) != PGRES_TUPLES_OK){
+	printf("%s\n", PQresultErrorMessage(res));
+	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+	printf("%s", __sendBuf);
+	return -1;
+      }
+
+      resultRows = PQntuples(res);
+      if(resultRows < 0){
+	sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_1, ENTER);
+	printf("%s", __sendBuf);
+	return -1;
+      }
+
+      /*sendLen = sprintf(__sendBuf, "%s %d%s", OK_STAT, resultRows, ENTER);
+	send(__soc, __sendBuf, sendLen, 0);
+	printf("[C_THREAD %ld] SEND=> %s", __selfId, __sendBuf);*/
+
+      for(j=0; j<resultRows; j++){
+	id = PQgetvalue(res, j, 0); //0 番目のフィールド値を取得
+	name = PQgetvalue(res, j, 1); //1 番目のフィールド値を取得
+	promotion_judge = atoi(PQgetvalue(res, j, 2)); //2 番目のフィールド値を取得
+	graduation_judge = atoi(PQgetvalue(res, j, 3)); //3 番目のフィールド値を取得
+	exam_classification  = atoi(PQgetvalue(res, j, 4)); //4番目のフィールド値を取得
+
+	sendLen = sprintf(__sendBuf, "%s %s %s %s %s%s", id, name, judge[promotion_judge+1], judge[graduation_judge+1], classification[exam_classification], ENTER);
+	/*プロトコル、レスポンスを送信*/
+	send(__soc, __sendBuf, sendLen, 0);
+      }
+    }
+  }else{
+    sprintf(__sendBuf, "%s %d%s", ER_STAT, E_CODE_5, ENTER);
+    printf("%s", __sendBuf);
+    return -1;
+  }
+
+  return 0;
+}

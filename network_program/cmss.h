@@ -19,7 +19,7 @@
 #include <pthread.h>
 #include <postgresql/libpq-fe.h>   //libpqライブラリを使用するために必要
 
-#define BUFSIZE 2048
+#define BUFSIZE 1024
 #define PORT 10000     //ATMサーバのポート番号
 #define ENTER "\n" //<LF>
 #define DATA_END ".\n"
@@ -35,6 +35,7 @@
 #define GJUDGE "graduation" //卒業判定
 #define CJUDGE "completion" //修了判定
 #define GRADUATE_COUNT "graduate_count" //卒業者・留年者
+#define ALL_JUDGE "alljudge" //判定一覧
 
 //*** ユーザレベル ***//
 #define ADMIN       0
@@ -93,5 +94,6 @@ extern int input_course(pthread_t __selfId, PGconn *__con, int __soc, char *__se
 extern int judge_main(pthread_t __selfId, PGconn *__con, int __soc, UserInfo *__User, char *__sendBuf, char *__recvBuf, int __judgeFlag);
 extern int graduate_count(pthread_t __selfId, PGconn *__con, int __soc, char *__recvBuf, char *__sendBuf, UserInfo *__User_Info);
 extern int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,UserInfo *__User_Info);
+extern int all_judge(pthread_t selfId, PGconn *__con, int __soc, char *recvBuf, char *sendBuf, UserInfo *__User_Info);
 
 #endif

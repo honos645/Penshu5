@@ -4,7 +4,7 @@
 
 CC	=	gcc
 
-LIBS	=	-lpq -lpthread
+LIBS	=	-lpq -lpthread -g
 
 SRCS	=	$(MAIN_SRC) $(USAMI) $(YANO) $(IKEIDO) $(KAMADA) $(AMAKI) $(TAIKI) $(KITAZAWA)
 

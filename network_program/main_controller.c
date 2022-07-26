@@ -44,7 +44,6 @@ void *main_controller(void *__arg){
 
     }else if(strcmp(comm, PERSONAL_GRADE)==0){
       /* 個人成績閲覧 */
-      printf("1\n");
       errorFlag = personal_grade(selfId, threadParam->con, threadParam->soc, recvBuf, User_Info);
 
     }else if(strcmp(comm, ALL_GRADE) == 0){
@@ -81,6 +80,7 @@ void *main_controller(void *__arg){
 
     if(errorFlag < 0){
       /* エラーレスポンスを送信 */
+      printf("error\n");
       sendLen = strlen(sendBuf);
       send(threadParam->soc, sendBuf, sendLen, 0);
       printf("[C_THREAD %ld] SEND=> %s", selfId, sendBuf);

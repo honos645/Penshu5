@@ -32,7 +32,7 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
   }
 
   //get studentinfo
-  sprintf(sql, "SELECT id, person_name, user_level, department, major, school_year FROM users WHERE id = %s;", q_id);
+  sprintf(sql, "SELECT id, person_name, user_level, department, major, school_year FROM users WHERE id = '%s';", q_id);
   res = PQexec(con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK){
     printf("%s\n", PQresultErrorMessage(res));
@@ -42,14 +42,6 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
     return -1;
   }
 
-  strcpy(sql_stu_name, PQgetvalue(res, 0, 1));
-  sql_stu_level = atoi(PQgetvalue(res, 0, 2));
-  strcpy(sql_stu_department, PQgetvalue(res, 0, 3));
-  strcpy(sql_stu_major, PQgetvalue(res, 0, 4));
-  sql_stu_year = atoi(PQgetvalue(res, 0, 5));
-  sql_stu_retake = atoi(PQgetvalue(res, 0, 6));
-
-
   //check userlevel
   if(__User_Info->user_level != ADMIN || __User_Info->user_level != CLERK || __User_Info->user_level != TEACH_COM || __User_Info->user_level != CHAIR){
     if(__User_Info->user_level == STUDENT && strcmp(__User_Info->id, q_id)!=0){
@@ -58,8 +50,8 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
       send(__soc, sendBuf, BUFSIZE, 0);
       printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
       return -1;
-    }else if(!(__User_Info->user_level == TEACH_HR || __User_Info->user_level == TEACH_VHR
-	       && __User_Info->school_year == sql_stu_year
+    }else if(__User_Info->user_level == TEACH_HR || __User_Info->user_level == TEACH_VHR
+	       && !(__User_Info->school_year == sql_stu_year
 	       && strcmp(__User_Info->department, sql_stu_department) == 0
 	       && __User_Info->major == sql_stu_major
 	       && __User_Info->school_year == sql_stu_year)){
@@ -76,7 +68,7 @@ int gpa_create(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,User
 	  "FROM subject_grade AS sg "
 	  "INNER JOIN subjectdetail_t AS sd "
 	  "ON sg.subject_code = sd.subject_code "
-	  "AND sg.opening_year = sd.opening_year WHERE id = %s ;", q_id);
+	  "AND sg.opening_year = sd.opening_year WHERE id = '%s' ;", q_id);
 
   //recieve
   res = PQexec(con, sql);

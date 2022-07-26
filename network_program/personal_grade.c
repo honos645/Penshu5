@@ -13,7 +13,7 @@ int personal_grade(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,
   int resultRows, n, sendLen;
 
   char q_id[BUFSIZE];
-  char subject_name[BUFSIZE][BUFSIZE], rating[BUFSIZE][BUFSIZE];
+  char subject_name[BUFSIZE][256], rating[BUFSIZE][BUFSIZE];
   int credit[BUFSIZE], grade_point[BUFSIZE], retake[BUFSIZE];
 
   char sql[BUFSIZE], sql_stu_name[BUFSIZE], sql_stu_department[BUFSIZE], sql_stu_major[BUFSIZE];
@@ -40,7 +40,7 @@ int personal_grade(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,
   //PQexec(con, sql);
 
   //get studentinfo
-  sprintf(sql, "SELECT id, person_name, user_level, department, major, school_year FROM users WHERE id = %s;", q_id);
+  sprintf(sql, "SELECT id, person_name, user_level, department, major, school_year FROM users WHERE id = '%s';", q_id);
   res = PQexec(con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK){
     printf("%s\n", PQresultErrorMessage(res));
@@ -64,8 +64,8 @@ int personal_grade(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,
       send(__soc, sendBuf, BUFSIZE, 0);
       printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
       return -1;
-    }else if(!(__User_Info->user_level == TEACH_HR || __User_Info->user_level == TEACH_VHR
-	       && __User_Info->school_year == sql_stu_year
+    }else if(__User_Info->user_level == TEACH_HR || __User_Info->user_level == TEACH_VHR
+	       && !(__User_Info->school_year == sql_stu_year
 	       && strcmp(__User_Info->department, sql_stu_department) == 0
 	       && __User_Info->major == sql_stu_major
 	       && __User_Info->school_year == sql_stu_year)){
@@ -82,13 +82,14 @@ int personal_grade(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,
 	  "FROM subject_grade AS sg "
 	  "INNER JOIN subject_detail AS sd "
 	  "ON sg.subject_code = sd.subject_code "
-	  "AND sg.opening_year = sd.opening_year WHERE id = %s ;", q_id);
+	  "AND sg.opening_year = sd.opening_year WHERE id = '%s' ;", q_id);
 
-  //recieve
+  printf("%s\n", sql);
+  // recieve
   res = PQexec(con, sql);
   if(PQresultStatus(res) != PGRES_TUPLES_OK){
     printf("%s\n", PQresultErrorMessage(res));
-    sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_4, ENTER);
+    sendLen = sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     printf("%s", sendBuf);
     send(__soc, sendBuf, sendLen, 0);
     printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);
@@ -97,6 +98,7 @@ int personal_grade(pthread_t __selfId, PGconn *con, int __soc, char * __recvBuf,
 
   resultRows = PQntuples(res);
   for(i=0; i<resultRows; i++){
+    printf("here\n");
     strcpy(subject_name[i],PQgetvalue(res, i, 3));
     credit[i] = atoi(PQgetvalue(res, i, 4));
     grade_point[i] = atoi(PQgetvalue(res, i, 5));
