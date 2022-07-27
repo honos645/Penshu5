@@ -26,16 +26,16 @@
 
 //*** プロトコルコマンド ***//
 #define ACCOUNT_CREATE    "account_create"  //ログイン
-#define GPA_CREATE    "gpa_create"  //個人GPA算出
-#define PERSONAL_GRADE   "personal_grade"  //個人成績
-#define ALL_GRADE   "allgrade"  //成績一覧
-#define SUBJECT_REGIST "subject_regist" //科目登録
-#define INPUT_COURSE "input_course" //進路入力
-#define PJUDGE "promotion" //卒業着手判定
-#define GJUDGE "graduation" //卒業判定
+#define GPA_CREATE    "GPACR"  //個人GPA算出
+#define PERSONAL_GRADE   "PSNGR"  //個人成績
+#define ALL_GRADE   "LSGRA"  //成績一覧
+#define SUBJECT_REGIST "SUBIN" //科目登録
+#define INPUT_COURSE "CRSIN" //進路入力
+#define PJUDGE "PROMO" //卒業着手判定
+#define GJUDGE "GRADU" //卒業判定
 #define CJUDGE "completion" //修了判定
-#define GRADUATE_COUNT "graduate_count" //卒業者・留年者
-#define ALL_JUDGE "alljudge" //判定一覧
+#define GRADUATE_COUNT "COUNT" //卒業者・留年者
+#define ALL_JUDGE "LSJUD" //判定一覧
 
 //*** ユーザレベル ***//
 #define ADMIN       0

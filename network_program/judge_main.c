@@ -125,7 +125,9 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
   char sendBuf[BUFSIZE];
 
   /* 合否取得SQL作成 例:personalJudge.sql*/
-  sprintf(sql, "SELECT grade_judge.id, users.person_name, grade_judge.%s FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';", judgeList[__judgeFlag], __studentNum);
+  sprintf(sql,  "SELECT grade_judge.id, users.person_name, grade_judge.%s "
+                "FROM grade_judge INNER JOIN users ON grade_judge.id = users.id WHERE grade_judge.id = '%s';"
+                , judgeList[__judgeFlag], __studentNum);
 
   /* SQL実行 */
   res = PQexec(__con, sql);
@@ -138,7 +140,7 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
   resultRows = PQntuples(res);
   if(resultRows != 1) {
 //NOTE: エラー2
-    sendLen = sprintf(__errorBuf, "%s %daaa%s", ER_STAT, E_CODE_7, ENTER);
+    sendLen = sprintf(__errorBuf, "%s %d%s", ER_STAT, E_CODE_7, ENTER);
     return -1;
   }
 
@@ -220,6 +222,7 @@ int judge_personal(pthread_t __selfId, PGconn *__con, int __soc, char *__student
             /*NOTE: 必修科目の講義名表示*/
             for (int k = 0; k < resultRows; k++) {
               if(atoi(PQgetvalue(res, k, 1)) == 0) {
+                if(__judgeFlag == PROMOTION && (!strcmp(PQgetvalue(res, k, 0), "卒業研究") || !strcmp(PQgetvalue(res, k, 0), "情報工学セミナー"))) continue;
                 sendLen = sprintf(sendBuf, "%s%s", PQgetvalue(res, k, 0), ENTER);
                 send(__soc, sendBuf, sendLen, 0);
                 printf("[C_THREAD %ld] SEND=> %s", __selfId, sendBuf);

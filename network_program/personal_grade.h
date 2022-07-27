@@ -1,6 +1,8 @@
 #ifndef VIEW_GRADE_H
 #define VIEW_GRADE_H
 
+
+#define SMLLBUF     256
 //*** ユーザレベル ***//
 #define ADMIN       0
 #define STUDENT     1

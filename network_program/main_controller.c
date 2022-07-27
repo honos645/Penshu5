@@ -49,6 +49,9 @@ void *main_controller(void *__arg){
     }else if(strcmp(comm, ALL_GRADE) == 0){
       /* 成績一覧 */
       errorFlag = all_grade(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
+    }else if(strcmp(comm, ALL_JUDGE) == 0){
+      /*判定一覧*/
+      errorFlag = all_judge(selfId, threadParam->con, threadParam->soc, recvBuf, sendBuf, User_Info);
 
     }else if(strcmp(comm, SUBJECT_REGIST) == 0){
       /* 科目登録 */
@@ -75,12 +78,11 @@ void *main_controller(void *__arg){
 
     }else{
       errorFlag = -1;
-      sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_3, DATA_END);
+      sprintf(sendBuf, "%s %d%s", ER_STAT, E_CODE_3, ENTER);
     }
 
     if(errorFlag < 0){
       /* エラーレスポンスを送信 */
-      printf("error\n");
       sendLen = strlen(sendBuf);
       send(threadParam->soc, sendBuf, sendLen, 0);
       printf("[C_THREAD %ld] SEND=> %s", selfId, sendBuf);

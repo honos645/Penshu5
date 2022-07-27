@@ -8,7 +8,7 @@
 //*** 期間 ***//
 #define TERMS	    32
 //*** 科目区分 ***//
-#define NUM_SUB	    3
+#define NUM_SUB	    6
 #define ALL	    0
 
 #define BASEEDU	    1
